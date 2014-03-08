@@ -3,6 +3,10 @@ package teamwork.linkpred;
 import java.util.HashMap;
 
 public class LinkPrediction {
+	// edge-strength functions
+	static final byte EXPONENTIAL = 1; //default
+	static final byte LOGISTIC = 2;
+    	
 	private ListGraph graph;
 	private double alpha;               // damping factor
 	private double lambda;              // regularization parameter
@@ -17,11 +21,80 @@ public class LinkPrediction {
 	// with a HashMap
 	private double [] dTransition;       // transition gradient TODO
 	private int s;                       // index of the s node
+	private byte weightFunction;         // edge-streingth function (1 or 2)
+	
 	
 	public LinkPrediction () {
 	    q = new HashMap<String,Double> ();         		
 	}
+	
+	
+	public void setWeightFunction (byte weightFunction) {
+		/** Sets the edge-strength function */
+		this.weightFunction = weightFunction;
+	}
 
+	public void setEdgeWeigths (double [] parameters) {
+		/** Sets the weights for all edges in the graph according
+		 *  to the chosen edge strength function
+		 */
+		for (int i = 0; i < graph.n; i++) {
+			for (int j = 0; j < graph.adjList[i].size(); j++) {
+				if (this.weightFunction == EXPONENTIAL)
+					graph.adjList[i].get(j).weight = exponental (dotProduct(
+							graph.adjList[i].get(j).features, parameters));
+				else if (this.weightFunction == LOGISTIC)
+					graph.adjList[i].get(j).weight = logistic (dotProduct(
+							graph.adjList[i].get(j).features, parameters));
+			}
+		}
+	}
+	
+	public static double dotProduct (double [] features, double [] parameters) {
+		/** Calculate dot product between given features vector
+		 *  and given parameters vector
+		 */
+		double dProd = 0;
+		for (int i = 0; i < features.length; i++)
+			dProd += (features[i] * parameters[i]);
+		return dProd;
+	}
+	
+	private double exponental (double z) {
+		/** Calculates the exponential function */
+		return Math.exp(z);
+	}
+	
+	private double logistic (double z) {
+		/** Calculates the logistic function */
+		return 1.0 / (1+ Math.exp(-z));
+	}
+	
+	public void setAlpha(double alpha) {
+		/** Sets the damping factor */
+		this.alpha = alpha;
+	}
+	
+	public void buildTransitionMatrix () {
+		/** Builds the transition matrix q */
+		double tmp = 0;
+		for (int i = 0; i < graph.n; i++) {
+			for (int j = 0; j < graph.adjList[i].size(); i++) {
+				tmp = (1-alpha) * graph.adjList[i].get(j).weight / 
+						  graph.sumWeights(i);
+				if (j == s)
+					tmp += alpha;
+				q.put(String.format("%d,%d", i, j), tmp);
+			}
+		}
+	}	
+	
+	public void calculatePageRank () {
+		/** Calculates the page rank, using pagerank
+		 *  with restarts algorithm
+		 */
+	}
+	
 	public ListGraph getGraph() {
 		return graph;
 	}
@@ -32,10 +105,6 @@ public class LinkPrediction {
 
 	public double getAlpha() {
 		return alpha;
-	}
-
-	public void setAlpha(double alpha) {
-		this.alpha = alpha;
 	}
 
 	public double getLambda() {
@@ -82,32 +151,13 @@ public class LinkPrediction {
 		return wPredicted;
 	}
 
-	public void setWPredicted(double w_predicted) {
-		this.wPredicted = w_predicted;
-	}
-
-	public double getwPredicted() {
-		return wPredicted;
-	}
-
+	
 	public void setwPredicted(double wPredicted) {
 		this.wPredicted = wPredicted;
 	}
 
 	public HashMap<String, Double> getQ() {
 		return q;
-	}
+	}	
 	
-	public void buildTransitionMatrix () {
-		/** Builds the transition matrix q */
-		for (int i = 0; i < graph.getN(); i++) {
-			for (int j = 0; j < graph.getAdjList()[i].size(); i++) {
-				q.put(String.format("%d,%d", i, j),
-					  graph.getAdjList()[i].get(j).getWeight() / 
-					  graph.sumWeights(i));
-			}
-		}
-	}
-
-		
 }

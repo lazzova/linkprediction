@@ -3,8 +3,8 @@ package teamwork.linkpred;
 import java.util.ArrayList;
 
 public class ListGraph {
-	private ArrayList<Edge> [] adjList;   // adjacency list
-	private int n;                        // number of nodes
+	ArrayList<Edge> [] adjList;   // adjacency list
+	int n;                        // number of nodes
 		
 	
 	@SuppressWarnings("unchecked")
@@ -16,17 +16,9 @@ public class ListGraph {
 		}
 	}	
 	
-	public ArrayList<Edge>[] getAdjList() {
-		return adjList;
-	}
-
-	public int getN() {
-		return n;
-	}
-	
 	public void addEdge (Edge e) {
-		adjList[e.getFrom()].add(e);
-		adjList[e.getTo()].add(e);
+		adjList[e.from].add(e);
+		adjList[e.to].add(e);
 	}
 	
 	public void addEdge (int from, int to) {
@@ -34,20 +26,15 @@ public class ListGraph {
 		addEdge(e);
 	}
 	
-	public void addEdge (int from, int to, byte weightFunction) {
-		Edge e = new Edge(from, to, weightFunction);
-		addEdge(e);
-	}
-	
-	public void addEdge (int from, int to, byte weightFunction, double [] features) {
-		Edge e = new Edge(from, to, weightFunction, features);
+	public void addEdge (int from, int to, double [] features) {
+		Edge e = new Edge(from, to, features);
 		addEdge(e);
 	}
 	
 	public double sumWeights (int index) {
 		double sum = 0;
 		for (int i = 0; i < adjList[index].size(); i++)
-			sum += adjList[index].get(i).getWeight();
+			sum += adjList[index].get(i).weight;
 		return sum;
 	}
 }

@@ -31,63 +31,61 @@ import java.util.Random;
 
 public class Main {
 	private static ListGraph g;
+	private static LinkPrediction problem;
 	
-	// edge-weight function
-	public static byte EXPONENTIAL = 1;
-	public static byte LOGISTIC = 2;
-
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		double [] w_real = {0.5, -0.3};
-		graphGeneration(100, 2, EXPONENTIAL);
+		/** Main method for defining and solving the learning
+		 *  problem as well as validation
+		 */
+		graphGeneration(100, 2);                                 // generate graph  
+		problem.setWeightFunction(LinkPrediction.EXPONENTIAL);   // set the edge-strength function
+		double [] w_real = {0.5, -0.3};                          // choose real parameter values
+		problem.setEdgeWeigths(w_real);                          // assign weights (adjacency matrix)
+		problem.setAlpha(0.2);                                   // set the damping factor
+		problem.buildTransitionMatrix();                         // build the transition matrix
+		problem.calculatePageRank();                             // TODO: calculate the page rank 
+		
 	}	
 	
 	
-	private static void graphGeneration (int n, int m, byte weightFunction) {
-		/** Generate undirected graph with n nodes and 
-		 *  m features and weightFunction as weight function.
+	private static void graphGeneration (int n, int m) {
+		/** Generate undirected graph with n nodes and m
+		 *  gaussian features and weightFunction as weight function.
 		 *  Used for testing purpose
 		 *  Adjacency list representation
 		 */
 		Random r = new Random(new Date().getTime());
-		// array for cumulative degree sums
-	    int [] degCumulative = new int [n];		
-		ListGraph g = new ListGraph(n);
-		
-		// connect first three nodes in a triad
-		g.addEdge(0, 1, weightFunction, randomGausianArray(m));
-		g.addEdge(1, 2, weightFunction, randomGausianArray(m));
-		g.addEdge(2, 0, weightFunction, randomGausianArray(m));
+		int [] degCumulative = new int [n];	                     // array for cumulative degree sums	
+				
+		g.addEdge(0, 1, randomGausianArray(m));                  // connect first three nodes in a triad
+		g.addEdge(1, 2, randomGausianArray(m));
+		g.addEdge(2, 0, randomGausianArray(m));
 		
 		int k;
 		int len;
 		int randNum;
 		for (int i = 3; i < n; i++) {
-			// generate three links
-			for (int j = 0; j < 3; j++) {
-				// select destination node randomly
-				if (r.nextInt() % 11 < 8) {
-					g.addEdge(i, r.nextInt() % i, weightFunction, 
-						      randomGausianArray(m));
+			
+			for (int j = 0; j < 3; j++) {                        // generate three links
+				if (r.nextInt() % 11 < 8) {                      // select destination node randomly
+					g.addEdge(i, r.nextInt() % i, randomGausianArray(m));
 				}
-				// select destination node proportionaly to its degree
-				else {
-					degCumulative[0] = g.getAdjList()[0].size();
+				
+				else {                                           // select destination node proportionaly to its degree
+					degCumulative[0] = g.adjList[0].size();
 					for (k = 1; k < i; k++)
 						degCumulative[k] = degCumulative[k-1] + 
-							               g.getAdjList()[k].size();
+							               g.adjList[k].size();
 					len = k-1;
 				    randNum = r.nextInt() % degCumulative[len-1];	
 					k = 0;
 				    while (randNum <= degCumulative[k])
 				    	k++;
-				    g.addEdge(i, k, weightFunction, 
-						      randomGausianArray(m));
+				    g.addEdge(i, k, randomGausianArray(m));
 				}
 			}
+			
 		}
-		
-		Main.g = g;
 	}
 	
 	
@@ -114,13 +112,5 @@ public class Main {
 		    rua[i] = r.nextDouble();	
 		
 		return rua;
-	}
-		
-	public static double [] pageRank () {
-		return null;
-	}
-	
-	
-	
-	
+	}	
 }
