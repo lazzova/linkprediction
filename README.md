@@ -5,3 +5,4 @@ Java implementation of the link prediction algorithm based on supervised random 
 
 Team Members: <br>
 -Verica Lazova
+-Magdalena Skrizevska
