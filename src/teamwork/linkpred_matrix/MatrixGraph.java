@@ -15,7 +15,8 @@ public class MatrixGraph {
     }
     
     public void addEdge(int from, int to){
-        adjMatrix[from][to] = new Edge();        
+        adjMatrix[from][to] = new Edge(); 
+        adjMatrix[to][from] = new Edge();
     }
     
     public void addEdge(int from, int to, double [] features){
