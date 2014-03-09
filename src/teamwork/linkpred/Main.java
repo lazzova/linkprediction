@@ -38,12 +38,19 @@ public class Main {
 		 *  problem as well as validation
 		 */
 		graphGeneration(100, 2);                                 // generate graph  
+		problem = new LinkPrediction(g);                         // create new link prediction problem
+		problem.setS(0);                                         // select the s node
 		problem.setWeightFunction(LinkPrediction.EXPONENTIAL);   // set the edge-strength function
 		double [] w_real = {0.5, -0.3};                          // choose real parameter values
-		problem.setEdgeWeigths(w_real);                          // assign weights (adjacency matrix)
+		problem.edgeWeigth(w_real);                              // assign weights (adjacency matrix)
 		problem.setAlpha(0.2);                                   // set the damping factor
 		problem.buildTransitionMatrix();                         // build the transition matrix
 		problem.calculatePageRank();                             // TODO: calculate the page rank 
+		problem.buildD(20);                                      // build d, the set of nodes s will link to in the future   
+		
+		problem.setInitialParameters(randomUniformArray(2));     // inital random values for the parameters 
+		problem.setB(1e-6);                                      // set the parameter for the WMW loss function
+		problem.setLambda(1);                                    // set the regularization parameter
 		
 	}	
 	
@@ -54,6 +61,7 @@ public class Main {
 		 *  Used for testing purpose
 		 *  Adjacency list representation
 		 */
+		g = new ListGraph(n, m);
 		Random r = new Random(new Date().getTime());
 		int [] degCumulative = new int [n];	                     // array for cumulative degree sums	
 				

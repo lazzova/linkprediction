@@ -3,13 +3,14 @@ package teamwork.linkpred;
 import java.util.ArrayList;
 
 public class ListGraph {
-	ArrayList<Edge> [] adjList;   // adjacency list
-	int n;                        // number of nodes
-		
+	ArrayList<Edge> [] adjList;                                  // adjacency list
+	int n;                                                       // number of nodes
+	int m;                           	                         // number of features
 	
 	@SuppressWarnings("unchecked")
-	public ListGraph (int n) {
+	public ListGraph (int n, int m) {
 		this.n = n;
+		this.m = m;
 		this.adjList = (ArrayList<Edge> []) new ArrayList [n];
 		for (int i = 0; i < n; i++) {
 			this.adjList[i] = new ArrayList<Edge>();
