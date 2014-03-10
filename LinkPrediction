@@ -1,0 +1,179 @@
+public class LinkPrediction {
+
+	
+	static final byte EXPONENTIAL =1;
+	static final byte LOGISTIC=2; //edge strength functions
+	
+	private double alpha; // damping factor
+	private double lambda; //regularization parameter
+	private double b;
+	private double []p;
+	private double [][]dp;
+	private double J;
+	private double gradient;
+	private double [] wPredicted;
+	
+	private double q [][];
+	private int s;
+	private byte weightFunction;
+	private byte [] d;
+	
+	private MatrixGraph graph;
+	
+	public LinkPrediction(MatrixGraph graph) {
+		//Constructor
+		this.graph=graph;
+		//this.q=new double [][]; //kolku ke bide golema vaa matrica??
+		this.p= new double [graph.n];
+		this.dp=new double [graph.n][graph.n];
+	}
+	
+	public void setS (int sIndex){
+		//Select the S node, whose links the algorithm learns from
+		this.s=sIndex;
+	}
+	
+	public void setWeightFunction (double [] parameters)
+	{
+		//Sets the weights for all edges in the graph according to the chosen edge strength function
+		//treba da zemame podatoci namesto od lista od matrica i da gi ogranicime spored taa matrica
+		
+	}
+	
+	public static double dotProduct (double [] v1, double [] v2){
+		//calculate dot product between two vectors
+		double dProd=0;
+		for(int i=0; i<v1.length; i++)
+			dProd+=(v1[i]*v2[i]);
+		return dProd;
+	}
+	
+	private double exponential (double z){
+		//Calculates the exponential function
+		return Math.exp(z);
+	}
+	
+	private double [] exponentialGradient (Edge e, double [] w){
+		/** Calculate partial derivatives of the exponential function
+		 *  parameterized by w, with respect to the feature 
+		 *  vector e.features
+		 */
+		double [] der = new double [w.length];
+		double tmp = exponential(dotProduct(e.features, w));
+		for (int i = 0; i < w.length; i++) {
+			der[i] = tmp * w[i];
+		}
+		return der;
+	}
+	
+	private double logistic (double z) {
+		/** Calculates the logistic function */
+		return 1.0 / (1+ Math.exp(-z));
+	}
+	
+	private double [] logisticGradient (Edge e, double [] w) {
+		/** Calculate partial derivatives of the logistic function
+		 *  parameterized by w, with respect to the feature 
+		 *  vector e.features
+		 */
+		double [] der = new double [w.length];
+		double tmp = logistic(dotProduct(e.features, w));
+		tmp *= (1 - tmp);
+		for (int i = 0; i < w.length; i++) {
+			der[i] = tmp * w[i];
+		}
+		return der;
+	}
+	
+	public double [] edgeWeightGradient (Edge e, double [] w) {
+		/** Calculate partial derivatives of the weight function
+		 *  parameterized by w, with respect to the feature 
+		 *  vector e.features
+		 */
+		if (weightFunction == EXPONENTIAL)
+			return exponentialGradient(e, w);
+		if (weightFunction == LOGISTIC)
+			return logisticGradient(e, w);
+		return null;
+	}
+	
+	public void setAlpha(double alpha) {
+		/** Sets the damping factor */
+		this.alpha = alpha;
+	}
+	
+	public void buildTransitionMatrix () {
+		/** Builds the transition matrix q */
+		
+		}
+	
+	public double transitionDerative (Edge e, int index){
+		return 0;
+		//Calculates the partial deratives of the (u,v) entry of the transition matrix with respect to the index-th parameter
+	}
+	
+	public void calculatePageRank() {
+		
+		double EPSILON= 1e-12;
+		double diff= Double.MAX_VALUE;
+		String key;
+		double [] oldP=p.clone();
+		//implementacija na funkcijata so matrica
+	}
+	
+	public void pageRankGradient(){
+		
+		for (int i=0; i<graph.n; i++)
+			p[i]=1.0/graph.n; //voa nema da bide taka oti treba da se zema od matrica u via slucaj a ne od lista (GRAPH)
+		
+		double EPSILON=1e-12;
+		double diff;
+		
+		double[] oldP=p.clone();
+		double[][] oldDP=dp.clone();
+		
+		double tmp;
+		double dtk;
+		String key;
+		
+		//itnn ... 
+	}
+	
+	public void buildD (int size) {
+		/** Build D, the set of nodes that s will
+		 *  link to in the future, with length 'size'.
+		 *  D contains the first 'size' number of nodes
+		 *  with highest page rank that s does not link to.
+		 */
+	}
+	
+	public void setInitialParameters (double [] initial){
+		this.wPredicted=initial;
+	}
+	
+	public void setLambda (double lambda){
+		this.lambda=lambda;
+	}
+	
+	public double WMWloss (double x) {
+		return 1.0/ (1+Math.exp(-x/b));
+	}
+	
+	public double WMWgradient (double x) {
+		/** Calculates the gradient of the 
+		 *  Wilcoxon-Mann-Whitney loss function 
+		 */
+		double tmp = logistic(x/b);
+		return tmp * (1-tmp) / b;     		
+	}
+	
+	public double costFunction(){
+		return 0;
+	}
+	
+	public double [] costFunctionGradient () {
+		// TODO
+		return null;
+	}
+}
+
