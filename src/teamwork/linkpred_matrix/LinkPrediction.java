@@ -1,6 +1,6 @@
 package teamwork.linkpred_matrix;
 
-//UNTESTED .. calculatePageRank UNIMPLEMENTED
+//UNTESTED .. calculatePageRank NOT IMPLEMENTED
 
 import java.util.HashMap;
 
