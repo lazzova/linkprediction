@@ -1,3 +1,5 @@
+package teamwork.linkpred_matrix;
+
 import java.util.HashMap;
 
 /**
