@@ -1,5 +1,5 @@
 package teamwork.linkpred_matrix;
-
+//aj da vijme so ke se dese :D
 public class Edge {
 	double weight;
 	double [] features;
