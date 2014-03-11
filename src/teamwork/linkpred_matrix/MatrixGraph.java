@@ -26,10 +26,8 @@ public class MatrixGraph {
     public double sumWeights(int index){
         double sum = 0;
         for(int i = 0; i < n; i++){
-            for(int j = 0; j < n; j++){
-                if(adjMatrix[i][j] != null)
-                    sum += adjMatrix[i][j].weight;
-             }
+                if(adjMatrix[i][index] != null)
+                    sum += adjMatrix[i][index].weight;
         }
         return sum;
     }
