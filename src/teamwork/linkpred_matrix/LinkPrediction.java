@@ -2,10 +2,9 @@ package teamwork.linkpred_matrix;
 
 import java.util.HashMap;
 
-/**
- *
- * @author blagoja
- */
+
+
+
 public class LinkPrediction {
     static final byte EXPONENTIAL = 1; //default
 	static final byte LOGISTIC = 2;
