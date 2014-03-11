@@ -1,3 +1,6 @@
+package teamwork.linkpred_matrix;
+
+
 /** 
  * 
  * @author Verica Lazova, Magdalena Skrizevska, Vesna Dimovska, Blagoja Kojcev
