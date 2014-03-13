@@ -18,12 +18,12 @@ public class ListGraph {
 	}	
 	
 	public void addEdge (Edge e) {
-		adjList[e.from].add(e);
-		adjList[e.to].add(e);
+		adjList[e.v1].add(e);
+		adjList[e.v2].add(e);
 	}
 	
-	public void addEdge (int from, int to) {
-		Edge e = new Edge(from, to);
+	public void addEdge (int v1, int v2) {
+		Edge e = new Edge(v1, v2);
 		addEdge(e);
 	}
 	
@@ -37,5 +37,34 @@ public class ListGraph {
 		for (int i = 0; i < adjList[index].size(); i++)
 			sum += adjList[index].get(i).weight;
 		return sum;
+	}
+	
+	public Edge getEdge (int from, int to) {
+		/** Retunrs the Edge between from and to */
+		Edge e = null;
+		for (int i = 0; i < adjList[from].size(); i++) {
+			e = adjList[from].get(i);
+			if (e.other(from) == to)
+				return e;
+		}
+		return e;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder s = new StringBuilder();
+		for (int i = 0; i < n; i++) {
+			s.append(i);
+			s.append(": ");
+			for (int j = 0; j < adjList[i].size(); j++) {
+				s.append(adjList[i].get(j).other(i));
+				s.append("[");
+				for (int k = 0; k < adjList[i].get(j).features.length; k++)
+					s.append(String.format("%.2f ", adjList[i].get(j).features[k]));
+				s.append("],  ");
+			}
+			s.append("\n");
+		}
+		return s.toString();
 	}
 }

@@ -3,24 +3,31 @@ package teamwork.linkpred;
 public class Edge {
 	double weight;
 	double [] features;
-	int from; // start node
-	int to;   // end node
+	int v1; // start node
+	int v2;   // end node
 	
-	public Edge (int from, int to) {
+	public Edge (int v1, int v2) {
 		this.weight = 0;
 		this.features = null;
-		this.from = from;
-		this.to = to;
+		this.v1 = v1;
+		this.v2 = v2;
 	}
 	
-	public Edge (int from, int to, double [] features) {
+	public Edge (int v1, int v2, double [] features) {
 		this.weight = 0;
 		this.features = features;
-		this.from = from;
-		this.to = to;
+		this.v1 = v1;
+		this.v2 = v2;
 	}
 	
 	public void setFeatures(double[] features) {
 		this.features = features;
-	}	
+	}
+	
+	public int other (int node) {
+		/** return the other node */
+		if (node == v1)
+			return v2;
+		return v1;
+	}
 }
