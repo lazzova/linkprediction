@@ -28,7 +28,6 @@ public class LinkPrediction {
 	
 	public LinkPrediction (ListGraph graph) {
 		/** Constructor */
-		// TODO: Testing
 		this.graph = graph;
 	    this.q = new HashMap<String,Double> ();
 	    this.p = new double [graph.n];
@@ -38,22 +37,29 @@ public class LinkPrediction {
 	public void setS (int sIndex) {
 		/** Select the S node, whose links the
 		 *  algorithm learns from
-		 */
-		// TODO: Testing
+		 */		
 		this.s = sIndex;
+	}
+	
+	public int getS () {
+		/** Getter */
+		return this.s;
 	}
 	
 	public void setWeightFunction (byte weightFunction) {
 		/** Sets the edge-strength function */
-		// TODO: Testing
 		this.weightFunction = weightFunction;
+	}
+	
+	public byte getWeightFunction () {
+		/** Getter */
+		return this.weightFunction;
 	}
 
 	public void edgeWeigth (double [] parameters) {
 		/** Sets the weights for all edges in the graph according
 		 *  to the chosen edge strength function
-		 */
-		// TODO: Testing
+		 */		
 		for (int i = 0; i < graph.n; i++) {
 			for (int j = 0; j < graph.adjList[i].size(); j++) {
 				if (this.weightFunction == EXPONENTIAL)
@@ -68,7 +74,6 @@ public class LinkPrediction {
 	
 	public static double dotProduct (double [] v1, double [] v2) {
 		/** Calculate dot product between two vectors */
-		// TODO: Testing
 		double dProd = 0;
 		for (int i = 0; i < v1.length; i++)
 			dProd += (v1[i] * v2[i]);
@@ -77,7 +82,6 @@ public class LinkPrediction {
 	
 	private double exponential (double z) {
 		/** Calculates the exponential function */
-		// TODO: Testing
 		return Math.exp(z);
 	}
 	
@@ -104,6 +108,7 @@ public class LinkPrediction {
 	
 	private double logistic (double z) {
 		/** Calculates the logistic function */
+		// TODO: Testing
 		return 1.0 / (1+ Math.exp(-z));
 	}
 	
@@ -157,23 +162,39 @@ public class LinkPrediction {
 	
 	public void setAlpha(double alpha) {
 		/** Sets the damping factor */
-		// TODO: Testing
 		this.alpha = alpha;
+	}
+	
+	public double getAlpha () {
+		/** Getter */
+		return alpha;
 	}
 	
 	public void buildTransitionMatrix () {
 		/** Builds the transition matrix q */
-		// TODO: Testing
 		double tmp = 0;
+		Edge e;
+		
+		for (int i = 0; i < graph.n; i++)
+			q.put(String.format("%d,%d", i, s), alpha);		
+		
 		for (int i = 0; i < graph.n; i++) {
-			for (int j = 0; j < graph.adjList[i].size(); i++) {
-				tmp = (1-alpha) * graph.adjList[i].get(j).weight / 
+			for (int j = 0; j < graph.adjList[i].size(); j++) {
+				e = graph.adjList[i].get(j);
+				tmp = (1-alpha) * e.weight / 
 						  graph.sumWeights(i);
-				if (j == s)
-					tmp += alpha;
-				q.put(String.format("%d,%d", i, j), tmp);
+				
+				if (e.other(i) == s)
+					q.put(String.format("%d,%d", i, e.other(i)), tmp+alpha);
+				else
+				    q.put(String.format("%d,%d", i, e.other(i)), tmp);				
 			}
 		}
+	}
+	
+	public HashMap<String, Double> getQ () {
+		/** Getter */
+		return q;
 	}
 	
 	public double transitionDerivative (int from, int to, int index) {

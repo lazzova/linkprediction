@@ -32,6 +32,11 @@ public class ListGraph {
 		addEdge(e);
 	}
 	
+	public void addEdge (int from, int to, double [] features, double weight) {
+		Edge e = new Edge(from, to, features, weight);
+		addEdge(e);
+	}
+	
 	public double sumWeights (int index) {
 		double sum = 0;
 		for (int i = 0; i < adjList[index].size(); i++)
@@ -50,18 +55,30 @@ public class ListGraph {
 		return e;
 	}
 	
+	public boolean hasEdge (Edge e) {
+		/** Returns true if Edge e exists */
+		for (int i = 0; i < adjList[e.v1].size(); i++) 
+			if (adjList[e.v1].get(i).other(e.v1) == e.v2)
+				return true;
+		
+		return false;
+	}
+	
 	@Override
 	public String toString() {
+		/** For debuging purpose */
 		StringBuilder s = new StringBuilder();
 		for (int i = 0; i < n; i++) {
 			s.append(i);
 			s.append(": ");
 			for (int j = 0; j < adjList[i].size(); j++) {
 				s.append(adjList[i].get(j).other(i));
-				s.append("[");
+				s.append(" weight:");
+				s.append(adjList[i].get(j).weight);
+				s.append(" [");
 				for (int k = 0; k < adjList[i].get(j).features.length; k++)
 					s.append(String.format("%.2f ", adjList[i].get(j).features[k]));
-				s.append("],  ");
+				s.append("]\n");
 			}
 			s.append("\n");
 		}
