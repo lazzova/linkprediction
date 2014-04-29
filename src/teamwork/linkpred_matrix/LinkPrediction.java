@@ -75,41 +75,52 @@ public class LinkPrediction {
 	}
 	
 	
-	public double transitionDerivative (int from, int to, int index) {
-		/** Calculates the partial derivatives of the (from, to) entry
-		 *  of the transition matrix with respect to the index-th parameter
+	public double edgeWeightPartialD (int graph, int i, int j, int index) {
+		/** Calculate partial derivative of the weight function (exponential funcion 
+		 *  considered) parameterized by w, with respect to the index-th parameter
+		 *  for the given graph
 		 */
-		// TODO
-		
-		/*
-		Edge e = graph.getEdge(from, to);
-		if (e == null)
-			return 0;
-		
-		double derivative = edgeWeightPartialD(e, index);		
-		double tmp = 0;
-		for (int i = 0; i < graph.adjList[from].size(); i++)
-			tmp += graph.adjList[from].get(i).weight;
-		derivative *= tmp;
-		
-		double tmpSquare = tmp * tmp;
-		tmp = 0;
-		for (int i = 0; i < graph.adjList[from].size(); i++)
-			tmp += edgeWeightPartialD(
-					graph.adjList[from].get(i), index);
-		tmp *= e.weight;
-		derivative -= tmp;
-		
-		derivative /= tmpSquare;
-		derivative *= alpha;
-		*/	
-			
-		return 0;
+		return A[i][j] * graphs [graph][i][j][index];
 	}
 	
 	
-	private void pageRankAndGradient () {
-		/** Calculates pagerank and it's gradient */
+	public RealMatrix transitionDerivative (int graph, int column, int index) {
+		/** Returns array of partial derivatives of the (i, column) entries
+		 *  of the transition matrix with respect to the index-th parameter
+		 *  for the given graph
+		 */
+		// TODO: Try to find more vectorized approach
+		// TODO: Testing
+		
+		RealMatrix d = new BlockRealMatrix(n, 1); 
+		double tmp;
+		double sum;
+		double sumSquared;
+		for (int i = 0; i < n; i++) {
+			tmp = edgeWeightPartialD(graph, i, column, index);		
+			sum = 0;
+			for (int j = 0; j < n; i++)
+				sum += A[i][j];
+			tmp *= sum;
+			
+			sumSquared = sum * sum;
+			
+			sum = 0;
+			for (int j = 0; i < n; j++)
+				sum += edgeWeightPartialD(graph, i, j, index);
+			sum *= A[i][column];
+			tmp -= sum;
+			
+			tmp *= (1-alpha)/sumSquared;
+			d.setEntry(i, 0, tmp);			
+		}
+			
+		return d;
+	}
+	
+	
+	private void pageRankAndGradient (int graph) {
+		/** Calculates pagerank and it's gradient, for given graph */
 		// TODO : This method can be optimized
 		// TODO
 		
@@ -118,46 +129,32 @@ public class LinkPrediction {
 		ManhattanDistance manhattan = new ManhattanDistance();
 				
 		for (int i = 0; i < n; i++)                              // pagerank initialization 
-			p[i] = 1.0 / n;
+			p[i] = 1.0 / n;		
 		
+		double [] oldP;                                          // the value of p in the previous iteration
+		double [][] oldDp = new double [f][];                    // the value of dp in the previous iteration
+		                                                         // ...starts with all entries 0 
 		
-		double [] oldP = p.clone();                              // the value of p in the previous iteration
-		double [][] oldDp = dp.clone();                          // the value of dp in the previous iteration
-		
-		double tmp;
-		double dtk;                                              // k-th partial derivative of the transition matrix
-		String key;
+		// PAGERANK GRADIENT
 		for (int k = 0; k < f; k++) {                            // for every parameter
 			diff = Double.MAX_VALUE;
 			while (diff > EPSILON) {
 				diff = 0;
 				for (int u = 0; u < n; u++) {
-					tmp = 0;
-					tmp += Q.getColumnMatrix(u).preMultiply(oldDp[k])[0];
-					for (int v = 0; v < n; v++) {
-						// TODO
-						// bi bilo dobro da vrakja matrica (kolona vektor) 
-						// nx1 kade sekoj i-ti element kje bide k-ti parcijalen 
-						// izvod za Q(i,u),  vo toj slucaj i za ovoj del kje
-						// mozime da primenime mnozenje na matrici i da go 
-						// izbegneme for ciklusot
-						dtk = transitionDerivative(u, v, k);
-						tmp += Q.getEntry(v, u) * oldDp[k][v] 
-								+ oldP[v] * dtk;
-					}
-					dp[k][u] = tmp;
-					diff += Math.abs(dp[k][u] - oldDp[k][u]);
-					oldDp[k][u] = dp[k][u];
+					dp[k][u] = Q.getColumnMatrix(u).preMultiply(oldDp[k])[0] +
+					      transitionDerivative(graph, u, k).preMultiply(p)[0];
 				}
+				diff = manhattan.compute(dp[k], oldDp[k]);
+				oldDp[k] = dp[k].clone();
 				
 				// calculate next iteration page rank
-				p = Q.preMultiply(p);
-				oldP = p.clone();				
+				p = Q.preMultiply(p);								
 			}		
 		}
 		
 		
 		// PAGERANK
+		oldP = p.clone();
 		while (manhattan.compute(p, oldP) > EPSILON) {
 			p = Q.preMultiply(p);
 			oldP = p.clone();
