@@ -1,14 +1,11 @@
 package teamwork.linkpred_matrix;
 
-import java.util.concurrent.ArrayBlockingQueue;
-
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.BlockRealMatrix;
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.distance.ManhattanDistance;
-
-import teamwork.linkpred.Edge;
 
 public class LinkPrediction {
 	private int g;                                               // number of graphs
@@ -22,13 +19,16 @@ public class LinkPrediction {
 	private double [][] dp;                                      // page rank gradient
 	private double [][] A;                                       // adjacency matrix
 	private RealMatrix Q;                                        // transition matrix	
-	private int [] s;                                            // array od indices of all s nodes
+	//private int [] s;                                          // array od indices of all s nodes (MIGHT NOT BE NEEDED)
 	private byte [][] D;                                         // nodes s will link to in the future 
 	                                                             //     if i-th node is in d, d[i] = 1
 	                                                             //     i-th row is the D set for s[i]
 	
+	private double J;                                            // cost
+	private double [] gradient;                                  // gradient
 	
-	public LinkPrediction(double [][][][] graphs, int [] s, byte [][] D, double alpha, double lambda, double b) {
+	
+	public LinkPrediction(double [][][][] graphs, byte [][] D, double alpha, double lambda, double b) {
 		/** Constructor */
 		this.g = graphs.length;
 		this.n = graphs[0].length;
@@ -37,12 +37,13 @@ public class LinkPrediction {
 		this.alpha = alpha;
 		this.lambda = lambda;
 		this.b = b;                                              // needed olnly if WMW loss function is used
-		this.s = s;
 		this.A = new double [n][n];
 		this.Q = new BlockRealMatrix(n, n);
 		this.p = new double [n];
-		this.dp = new double [f][n];                            // partial deriv of each pagerankvalue are column vectors
+		this.dp = new double [f][n];                             // partial deriv of each pagerankvalue are column vectors
 		this.D = D;
+		this.gradient = new double [f];
+		this.J = Double.MAX_VALUE;
 	}
 
 	
@@ -178,26 +179,53 @@ public class LinkPrediction {
 	}
 	
 	
-	public double costFunction (RealVector w) {
+	public void costFunctionAndGradient (RealVector w) {
 		/** Calculates the fitting error J 
 		 *  given initial parameter vector 
 		 */		
-		// TODO: Testing
+		// TODO: Testing (especially with the gradient calculation)
 		
-		double regTerm = 0;                                      // regularization term
+		double regTerm = w.dotProduct(w);                        // regularization term
 		double errorTerm = 0;                                    // error term
 		
 		for (int k = 0; k < g; k++) {
-			regTerm += w.dotProduct(w);                          			
-			                                
+			buildAdjacencyMatrix(k, w);
+			buildTransitionMatrix();
+			pageRankAndGradient(k);
+			
 			for (int i = 0; i < D[k].length; i++) {
-				if (D[k][i] == 1)                                   // has link
-					for (int j = 0; j < n; j++) 
-						if (D[k][j] == 0)                           // no link
-							errorTerm += WMWloss(p[j] - p[i]);		
+				if (D[k][i] == 1) {                                                  // has link
+					for (int j = 0; j < n; j++) { 
+						if (D[k][j] == 0) {                                          // no link
+							errorTerm += WMWloss(p[j] - p[i]);
+							for (int idx = 0; idx < f; idx++)                        // for each element of the gradient vector
+								gradient[idx] += (WMWderivative(p[i] - p[j]) *       // derivative of the error term
+			    			    	    (dp[idx][i] - dp[idx][j]));	  
+						}
+					}
+				}
 			}
 		}
 		
-	    return regTerm + lambda * errorTerm;
+	    J = regTerm + lambda * errorTerm;
+	    
+	    for (int idx = 0; idx < f; idx++) {
+	    	gradient[idx] *= lambda;
+			gradient[idx] += 2 * w.getEntry(idx);                // derivative of the regularization term
+	    }
+	}
+	
+	
+	public double getCost (double []  w) {
+		/** Calculates cost function and gradient
+		 *  and returns cost function value
+		 */
+		costFunctionAndGradient(MatrixUtils.createRealVector(w));
+		return J;
+	}
+	
+	public double [] getGradient () {
+		/** Returns the gradient of the cost function */
+		return gradient;
 	}
 }
