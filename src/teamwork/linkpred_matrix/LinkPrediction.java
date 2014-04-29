@@ -161,4 +161,43 @@ public class LinkPrediction {
 		}
 	}
 	
+	
+	public double WMWloss (double x) {
+		/** Calculates the Wilcoxon-Mann-Whitney loss function */
+		// TODO: Testing
+		return 1.0 / (1+ Math.exp(-x/b));
+	}
+	
+	public double WMWderivative (double x) {
+		/** Calculates the derivative of the 
+		 *  Wilcoxon-Mann-Whitney loss function 
+		 */
+		// TODO: Testing
+		double tmp = 1.0 / (1+ Math.exp(x/b));
+		return tmp * (1-tmp) / b;     		
+	}
+	
+	
+	public double costFunction (RealVector w) {
+		/** Calculates the fitting error J 
+		 *  given initial parameter vector 
+		 */		
+		// TODO: Testing
+		
+		double regTerm = 0;                                      // regularization term
+		double errorTerm = 0;                                    // error term
+		
+		for (int k = 0; k < g; k++) {
+			regTerm += w.dotProduct(w);                          			
+			                                
+			for (int i = 0; i < D[k].length; i++) {
+				if (D[k][i] == 1)                                   // has link
+					for (int j = 0; j < n; j++) 
+						if (D[k][j] == 0)                           // no link
+							errorTerm += WMWloss(p[j] - p[i]);		
+			}
+		}
+		
+	    return regTerm + lambda * errorTerm;
+	}
 }
