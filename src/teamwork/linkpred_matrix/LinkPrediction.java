@@ -129,13 +129,13 @@ public class LinkPrediction {
 		double diff = Double.MAX_VALUE;
 		ManhattanDistance manhattan = new ManhattanDistance();
 				
-		for (int i = 0; i < n; i++)                              // pagerank initialization 
-			p[i] = 1.0 / n;		
-		
-		double [] oldP;                                          // the value of p in the previous iteration
+		double [] oldP = new double [n];                         // the value of p in the previous iteration
 		double [][] oldDp = new double [f][];                    // the value of dp in the previous iteration
 		                                                         // ...starts with all entries 0 
 		
+		for (int i = 0; i < n; i++)                              // pagerank initialization 
+			p[i] = 1.0 / n;
+					
 		// PAGERANK GRADIENT
 		for (int k = 0; k < f; k++) {                            // for every parameter
 			diff = Double.MAX_VALUE;
@@ -155,7 +155,6 @@ public class LinkPrediction {
 		
 		
 		// PAGERANK
-		oldP = p.clone();
 		while (manhattan.compute(p, oldP) > EPSILON) {
 			p = Q.preMultiply(p);
 			oldP = p.clone();
@@ -227,5 +226,9 @@ public class LinkPrediction {
 	public double [] getGradient () {
 		/** Returns the gradient of the cost function */
 		return gradient;
+	}
+	
+	public int getParametersNumber () {
+		return f;
 	}
 }

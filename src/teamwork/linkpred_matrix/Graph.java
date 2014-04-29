@@ -46,7 +46,7 @@ public class Graph {
 		for (int i = 3; i < n; i++) {
 			
 			for (int j = 0; j < 3; j++) {                        // generate three links
-				if (rand.nextInt(11) < 8) {           // select destination node randomly
+				if (rand.nextInt(11) < 8) {                      // select destination node randomly
 					randNum = rand.nextInt(i);
 					rv = randomVector.nextVector();
 					

@@ -1,25 +1,18 @@
 package teamwork.linkpred_matrix;
 
-import java.util.Date;
-
-import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.analysis.MultivariateVectorFunction;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.BlockRealMatrix;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.ml.distance.ManhattanDistance;
 import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.optim.SimplePointChecker;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.nonlinear.scalar.MultiStartMultivariateOptimizer;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunctionGradient;
-import org.apache.commons.math3.optim.nonlinear.scalar.gradient.NonLinearConjugateGradientOptimizer;
-import org.apache.commons.math3.random.GaussianRandomGenerator;
-import org.apache.commons.math3.random.JDKRandomGenerator;
-import org.apache.commons.math3.random.RandomVectorGenerator;
-import org.apache.commons.math3.random.UncorrelatedRandomVectorGenerator;
 
 public class Main {
 
+	
+	
+	/*
 	public static void main(String[] args) {
 		// EXPECTED RESULTS:      
 		// X1 = 1.5
@@ -61,30 +54,133 @@ public class Main {
 				new MultiStartMultivariateOptimizer(lp, 10, rvg);
 		
 		PointValuePair optimum = optimizer.optimize(optData)
-		*/
+		/
 	}
-}
-
-
-class Function implements MultivariateFunction {
-
-	@Override
-	public double value(double[] param) {
-		double x1 = param[0];
-		double x2 = param[1];
-		return x1*x1 + 2*x2*x2 - 3*x1 + 7*x2 -1;
+	*/
+	
+	public static void main(String[] args) {
+		double [][][][] graphs = new double [1][][][];
+		graphs[0] = Graph.generate(100, 2);
+		double alpha = 0.2;
+		double b = 1e-6;
+		double lambda = 1;
+		double [] parameters = {0.5, -0.3}; 
+		byte [][] D = new byte [1][];
+		D[0] = buildD(graphs[0], 0, MatrixUtils.createRealVector(parameters), 10);
+		
+		LinkpredProblem problem = new LinkpredProblem(graphs, D, alpha, lambda, b);
+		problem.optimize();
+		PointValuePair optimum = problem.getOptimum();
+		
+		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
+		        optimum.getPoint()[0] + " " + optimum.getPoint()[1]);
 	}
 	
-}
-
-class Gradient implements MultivariateVectorFunction {
-
-	@Override
-	public double[] value(double[] param) throws IllegalArgumentException {
-		return new double [] {2*param[0]-3, 4*param[1]+7};
+	
+	public static byte [] buildD (double [][][] graph, int s, RealVector trueParameters, int topN) {
+		/** Builds the D set (created links) for artifitial graph and known
+		 *  parameter values, by taking the first topN highest ranked nodes.
+		 *  s is the node whose links we are looking at
+		 */
+		int n = graph.length;
+		byte [] D = new byte [n];
+		int [] nodes = new int [n];
+		for (int i = 1; i < n; i++)
+			nodes[i] = i;
+		
+		// find pageranks
+		double [][] A = buildAdjacencyMatrix(graph, trueParameters);
+		RealMatrix Q = buildTransitionMatrix(A);
+		double [] rank = pagerank(Q);
+		
+		// sort the ranks
+		double keyRank;
+		int keyNode;
+		int k;
+		for (int i = 1; i < n; i++) {
+		    keyRank = rank[i];
+		    keyNode = nodes[i];
+		    k = i - 1;
+		    while (k >= 0 && rank[k] > keyRank) {
+		    	rank[k + 1] = rank[k];
+		    	nodes[k + 1] = nodes[k];
+		        k--;
+		    }
+		    rank[k + 1] = keyRank;
+		    nodes[k + 1] = keyNode;
+		}
+		
+		// find top ranked nodes
+		int count = topN;
+		k = 0;
+		while (k < n && count > 0) {
+			if (nodes[k] != s && A[s][nodes[k]] == 1) {          // the node is not s, and has no links to s previously 
+				D[nodes[k]] = 1;
+				count--;
+			}
+			k++;
+		}
+		
+		return D;		
 	}
 	
+	private static double [][] buildAdjacencyMatrix (double [][][] graph, RealVector param) {
+		/** Builds the adjacency matrix using exponential 
+		 * edge-strength function, logistic function is the other option.
+		 */
+		int n = graph.length;
+		double [][] A = new double [n][n];
+		for (int i = 0; i < n; i++) 
+			for (int j = 0; j < n; j++)
+				A[i][j] = Math.exp(
+						param.dotProduct(new ArrayRealVector(graph[i][j])));
+		
+		return A;
+	}
+	
+	
+	private static RealMatrix buildTransitionMatrix (double [][] A) {
+		/** Builds the transition matrix for given adjacency matrix*/
+		RealMatrix Q = new BlockRealMatrix(A.length, A.length);
+		
+		for (int i = 0; i < A.length; i++) {
+			for (int j = 0; j < A.length; j++) {
+				Q.setEntry(i, j, A[i][j] / sumElements(A[i]));
+			}
+		}
+		
+		return Q;
+	}
+	
+	private static double sumElements (double [] a) {
+		/** Sums the elements of an array */
+		int sum = 0;
+		for (int i = 0; i < a.length; i++)
+			sum += a[i];
+		return sum;
+	}
+	
+	private static double [] pagerank (RealMatrix Q) {
+		/** Calculates the pagerank, given a transition matrix */
+		
+		double EPSILON = 1e-12;
+		ManhattanDistance manhattan = new ManhattanDistance();
+		int n = Q.getRowDimension();
+		double [] p = new double [n];
+		double [] oldP = new double [n];
+		
+		for (int i = 0; i < n; i++)                      // pagerank initialization 
+			p[i] = 1.0 / n;
+		
+		while (manhattan.compute(p, oldP) > EPSILON) {
+			p = Q.preMultiply(p);
+			oldP = p.clone();
+		}
+		
+		return p;
+	}
 }
+
 
 
 
