@@ -48,6 +48,7 @@ public class LinkPrediction {
 
 	
 	private void buildAdjacencyMatrix (int k, RealVector param) {
+		System.out.println("Build A");
 		/** Builds the adjacency matrix for the k-th graph, using exponential 
 		 * edge-strength function, logistic function is the other option.
 		 */
@@ -59,9 +60,11 @@ public class LinkPrediction {
 	
 	
 	private void buildTransitionMatrix () {
+		System.out.println("Build Q");
 		/** Builds the transition matrix for given adjacency matrix*/		
 		for (int i = 0; i < A.length; i++) {
 			for (int j = 0; j < A.length; j++) {
+				if (A[i][j] == 1) Q.setEntry(i, j, 0); // TODO: no edge, i need to fix this
 				Q.setEntry(i, j, A[i][j] / sumElements(A[i]));
 			}
 		}		
@@ -69,7 +72,7 @@ public class LinkPrediction {
 	
 	private double sumElements (double [] a) {
 		/** Sums the elements of an array */
-		int sum = 0;
+		double sum = 0;
 		for (int i = 0; i < a.length; i++)
 			sum += a[i];
 		return sum;
@@ -100,19 +103,20 @@ public class LinkPrediction {
 		for (int i = 0; i < n; i++) {
 			tmp = edgeWeightPartialD(graph, i, column, index);		
 			sum = 0;
-			for (int j = 0; j < n; i++)
+			for (int j = 0; j < n; j++)
 				sum += A[i][j];
 			tmp *= sum;
 			
 			sumSquared = sum * sum;
 			
 			sum = 0;
-			for (int j = 0; i < n; j++)
+			for (int j = 0; j < n; j++)
 				sum += edgeWeightPartialD(graph, i, j, index);
 			sum *= A[i][column];
 			tmp -= sum;
 			
-			tmp *= (1-alpha)/sumSquared;
+			tmp /= sumSquared;
+			tmp *= (1-alpha);
 			d.setEntry(i, 0, tmp);			
 		}
 			
@@ -121,6 +125,7 @@ public class LinkPrediction {
 	
 	
 	private void pageRankAndGradient (int graph) {
+		System.out.println("Calculate pagerank and gradient");
 		/** Calculates pagerank and it's gradient, for given graph */
 		// TODO : This method can be optimized
 		// TODO
@@ -130,7 +135,7 @@ public class LinkPrediction {
 		ManhattanDistance manhattan = new ManhattanDistance();
 				
 		double [] oldP = new double [n];                         // the value of p in the previous iteration
-		double [][] oldDp = new double [f][];                    // the value of dp in the previous iteration
+		double [][] oldDp = new double [f][n];                   // the value of dp in the previous iteration
 		                                                         // ...starts with all entries 0 
 		
 		for (int i = 0; i < n; i++)                              // pagerank initialization 
@@ -140,13 +145,14 @@ public class LinkPrediction {
 		for (int k = 0; k < f; k++) {                            // for every parameter
 			diff = Double.MAX_VALUE;
 			while (diff > EPSILON) {
-				diff = 0;
 				for (int u = 0; u < n; u++) {
 					dp[k][u] = Q.getColumnMatrix(u).preMultiply(oldDp[k])[0] +
 					      transitionDerivative(graph, u, k).preMultiply(p)[0];
 				}
 				diff = manhattan.compute(dp[k], oldDp[k]);
-				oldDp[k] = dp[k].clone();
+				
+				for (int u = 0; u < n; u++)
+					oldDp[k][u] = dp[k][u];
 				
 				// calculate next iteration page rank
 				p = Q.preMultiply(p);								

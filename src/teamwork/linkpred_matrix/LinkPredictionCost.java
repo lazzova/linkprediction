@@ -11,7 +11,18 @@ public class LinkPredictionCost implements MultivariateFunction {
 
 	@Override
 	public double value(double[] point) {
-		return lp.getCost(point);
+		double d = lp.getCost(point);
+		
+		System.out.println("Cost: " + d);
+		System.out.println("Parameters: ");
+		for (int i = 0; i < point.length; i++) {
+			System.out.print(point[i]);
+			System.out.println(" ");
+		}
+		System.out.println();
+		System.out.println();
+		
+		return d;
 	}
 
 }

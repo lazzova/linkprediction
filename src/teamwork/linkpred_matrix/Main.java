@@ -59,16 +59,27 @@ public class Main {
 	*/
 	
 	public static void main(String[] args) {
+		
+		System.out.println("START");
+		
 		double [][][][] graphs = new double [1][][][];
 		graphs[0] = Graph.generate(100, 2);
+		
+		System.out.println("Graph generated...");
+		
 		double alpha = 0.2;
-		double b = 1e-6;
+		double b = 1e-2;
 		double lambda = 1;
-		double [] parameters = {0.5, -0.3}; 
+		double [] parameters = {1, -1}; 
 		byte [][] D = new byte [1][];
 		D[0] = buildD(graphs[0], 0, MatrixUtils.createRealVector(parameters), 10);
 		
+		System.out.println("D set found...");
+		
 		LinkpredProblem problem = new LinkpredProblem(graphs, D, alpha, lambda, b);
+		
+		System.out.println("Optimization started...");
+		
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
 		
@@ -78,7 +89,7 @@ public class Main {
 	
 	
 	public static byte [] buildD (double [][][] graph, int s, RealVector trueParameters, int topN) {
-		/** Builds the D set (created links) for artifitial graph and known
+		/** Builds the D set (created links) for synthetic graph and known
 		 *  parameter values, by taking the first topN highest ranked nodes.
 		 *  s is the node whose links we are looking at
 		 */
