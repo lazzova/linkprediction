@@ -1,5 +1,7 @@
 package teamwork.linkpred_matrix;
 
+import java.util.Scanner;
+
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -11,6 +13,7 @@ public class LinkPrediction {
 	private int g;                                               // number of graphs
 	private int n;                                               // number of nodes
 	private int f;                                               // number of features
+	private byte [][][] connected;                               // g matrices, each (i, j)th element is 1 if i and j are linked, 0 otherwise
 	private double [][][][] graphs;                              // g graphs for which, each (i,j)th element is a feature vector of the link between i and j
 	private double alpha;                                        // damping factor
 	private double lambda;                                       // regularization parameter
@@ -19,7 +22,7 @@ public class LinkPrediction {
 	private double [][] dp;                                      // page rank gradient
 	private double [][] A;                                       // adjacency matrix
 	private RealMatrix Q;                                        // transition matrix	
-	//private int [] s;                                          // array od indices of all s nodes (MIGHT NOT BE NEEDED)
+	private int [] s;                                            // array od indices of all s nodes (MIGHT NOT BE NEEDED)
 	private byte [][] D;                                         // nodes s will link to in the future 
 	                                                             //     if i-th node is in d, d[i] = 1
 	                                                             //     i-th row is the D set for s[i]
@@ -28,14 +31,17 @@ public class LinkPrediction {
 	private double [] gradient;                                  // gradient
 	
 	
-	public LinkPrediction(double [][][][] graphs, byte [][] D, double alpha, double lambda, double b) {
+	public LinkPrediction(double [][][][] graphs, byte [][][] connected, 
+			int [] s, byte [][] D, double alpha, double lambda, double b) {
 		/** Constructor */
 		this.g = graphs.length;
 		this.n = graphs[0].length;
 		this.f = graphs[0][0][0].length;
 		this.graphs = graphs;
+		this.connected = connected;
 		this.alpha = alpha;
 		this.lambda = lambda;
+		this.s = s;
 		this.b = b;                                              // needed olnly if WMW loss function is used
 		this.A = new double [n][n];
 		this.Q = new BlockRealMatrix(n, n);
@@ -48,24 +54,27 @@ public class LinkPrediction {
 
 	
 	private void buildAdjacencyMatrix (int k, RealVector param) {
-		System.out.println("Build A");
 		/** Builds the adjacency matrix for the k-th graph, using exponential 
 		 * edge-strength function, logistic function is the other option.
 		 */
 		for (int i = 0; i < n; i++) 
-			for (int j = 0; j < n; j++)
+			for (int j = 0; j < n; j++) 
 				A[i][j] = Math.exp(
-						param.dotProduct(new ArrayRealVector(graphs[k][i][j])));				
+						param.dotProduct(new ArrayRealVector(graphs[k][i][j])));
 	}
 	
 	
-	private void buildTransitionMatrix () {
-		System.out.println("Build Q");
-		/** Builds the transition matrix for given adjacency matrix*/		
+	private void buildTransitionMatrix (int k) {
+		/** Builds the transition matrix for given adjacency 
+		 *  matrix and k-th graph 
+		 */		
 		for (int i = 0; i < A.length; i++) {
 			for (int j = 0; j < A.length; j++) {
-				if (A[i][j] == 1) Q.setEntry(i, j, 0); // TODO: no edge, i need to fix this
-				Q.setEntry(i, j, A[i][j] / sumElements(A[i]));
+				if (j == s[k])
+					Q.setEntry(i, j, alpha);
+				if (connected[k][i][j] == 1) 
+					Q.setEntry(i, j, Q.getEntry(i, j) + 
+						(1-alpha) * A[i][j] / sumElements(A[i]));
 			}
 		}		
 	}
@@ -125,7 +134,6 @@ public class LinkPrediction {
 	
 	
 	private void pageRankAndGradient (int graph) {
-		System.out.println("Calculate pagerank and gradient");
 		/** Calculates pagerank and it's gradient, for given graph */
 		// TODO : This method can be optimized
 		// TODO
@@ -139,8 +147,8 @@ public class LinkPrediction {
 		                                                         // ...starts with all entries 0 
 		
 		for (int i = 0; i < n; i++)                              // pagerank initialization 
-			p[i] = 1.0 / n;
-					
+			p[i] = 1.0 / (double)n;
+								
 		// PAGERANK GRADIENT
 		for (int k = 0; k < f; k++) {                            // for every parameter
 			diff = Double.MAX_VALUE;
@@ -193,9 +201,9 @@ public class LinkPrediction {
 		double regTerm = w.dotProduct(w);                        // regularization term
 		double errorTerm = 0;                                    // error term
 		
-		for (int k = 0; k < g; k++) {
+		for (int k = 0; k < g; k++) {                            // for each graph
 			buildAdjacencyMatrix(k, w);
-			buildTransitionMatrix();
+			buildTransitionMatrix(k);
 			pageRankAndGradient(k);
 			
 			for (int i = 0; i < D[k].length; i++) {
@@ -203,9 +211,10 @@ public class LinkPrediction {
 					for (int j = 0; j < n; j++) { 
 						if (D[k][j] == 0) {                                          // no link
 							errorTerm += WMWloss(p[j] - p[i]);
-							for (int idx = 0; idx < f; idx++)                        // for each element of the gradient vector
-								gradient[idx] += (WMWderivative(p[i] - p[j]) *       // derivative of the error term
-			    			    	    (dp[idx][i] - dp[idx][j]));	  
+							for (int idx = 0; idx < f; idx++) {                      // for each element of the gradient vector
+								gradient[idx] += (WMWderivative(p[j] - p[i]) *       // derivative of the error term
+			    			    	    (dp[idx][j] - dp[idx][i]));								
+							}
 						}
 					}
 				}

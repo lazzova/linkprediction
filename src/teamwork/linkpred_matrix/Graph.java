@@ -12,33 +12,34 @@ public class Graph {
 	  *  a vector of features
 	  */
 	
-	
-	public static double [][][] generate (int n, int f) {
-		/** Generate undirected graph with n nodes and m
-		 *  Gaussian features
-		 *  Used for testing purpose		 
-		 */
-				
-		double [][][] g = new double [n][n][f];		
-		
+	public static double [] generateFeatures (int f) {
+		/** Generate array of f Gaussian features */
 		JDKRandomGenerator rand = new JDKRandomGenerator();
 		rand.setSeed(new Date().getTime()); 
 		RandomVectorGenerator randomVector = 
 				new UncorrelatedRandomVectorGenerator(
-				f, new GaussianRandomGenerator(rand));           // random vector generator (f elements)
+				f, new GaussianRandomGenerator(rand));
 		
-		int [] degCumulative = new int [n];	                     // array for cumulative degree sums
-		double rv [];                                            // random vector, temporary storage
+		return randomVector.nextVector();
+	}
+		
+	public static byte [][] generate (int n) {
+		/** Generate undirected graph with n nodes.
+		 *  Used for testing purpose		 
+		 */
+		
+		JDKRandomGenerator rand = new JDKRandomGenerator();
+		rand.setSeed(new Date().getTime()); 
 				
-		rv = randomVector.nextVector();
-		g[0][1] = rv.clone();                                    // connect first three nodes in a triad
-		g[1][0] = rv.clone();
-		rv = randomVector.nextVector();
-		g[1][2] = rv.clone();  
-		g[2][1] = rv.clone(); 
-		rv = randomVector.nextVector();
-		g[2][0] = rv.clone(); 
-		g[0][2] = rv.clone(); 
+		byte [][] g = new byte [n][n];		
+		int [] degCumulative = new int [n];	                     // array for cumulative degree sums
+						
+		g[0][1] = 1;                                             // connect first three nodes in a triad
+		g[1][0] = 1;
+		g[1][2] = 1;  
+		g[2][1] = 1; 
+		g[2][0] = 1; 
+		g[0][2] = 1; 
 		
 		int k;
 		int len;
@@ -48,12 +49,8 @@ public class Graph {
 			for (int j = 0; j < 3; j++) {                        // generate three links
 				if (rand.nextInt(11) < 8) {                      // select destination node randomly
 					randNum = rand.nextInt(i);
-					rv = randomVector.nextVector();
-					
-					if (g[i][randNum] == null) {
-						g[i][randNum] = rv.clone();
-						g[randNum][i] = rv.clone();
-					}
+					g[i][randNum] = 1;
+					g[randNum][i] = 1;					
 				}
 				
 				else {                                           // select destination node proportionaly to its degree
@@ -67,11 +64,9 @@ public class Graph {
 				    while (randNum > degCumulative[k])
 				    	k++;
 				    
-				    rv = randomVector.nextVector();
-				    if (g[i][k] == null) {
-					    g[i][k] = rv.clone();
-					    g[k][i] = rv.clone();
-				    }
+				    g[i][k] = 1;
+					g[k][i] = 1;
+				    
 				}								
 			}			
 		}
@@ -80,10 +75,10 @@ public class Graph {
 	}
 	
 	
-	private static int countElements (double [][] a) {
+	private static int countElements (byte [] a) {
 		int count = 0;
 		for (int i = 0; i < a.length; i++)
-			if (a[i] != null) count++;
+			if (a[i] == 1) count++;
 		return count;
 	}
 }

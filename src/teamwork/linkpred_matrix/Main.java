@@ -62,21 +62,29 @@ public class Main {
 		
 		System.out.println("START");
 		
-		double [][][][] graphs = new double [1][][][];
-		graphs[0] = Graph.generate(100, 2);
+		int n = 100;                                             // number of nodes
+		int f = 2;                                               // number of features
+		byte [][][] connected = new byte [1][][];
+		connected[0] = Graph.generate(100);
+		double [][][][] graphs = new double [1][n][n][];
+		for (int i = 0; i < n; i++)
+			for (int j = 0; j < n; j++)
+				graphs[0][i][j] = Graph.generateFeatures(f);
 		
 		System.out.println("Graph generated...");
 		
 		double alpha = 0.2;
-		double b = 1e-2;
+		double b = 1e-8;
 		double lambda = 1;
 		double [] parameters = {1, -1}; 
 		byte [][] D = new byte [1][];
-		D[0] = buildD(graphs[0], 0, MatrixUtils.createRealVector(parameters), 10);
+		D[0] = buildD(graphs[0], connected[0], 0, alpha, MatrixUtils.createRealVector(parameters), 10);
+		int [] s = {0};
+		
 		
 		System.out.println("D set found...");
 		
-		LinkpredProblem problem = new LinkpredProblem(graphs, D, alpha, lambda, b);
+		LinkpredProblem problem = new LinkpredProblem(graphs, connected, s, D, alpha, lambda, b);
 		
 		System.out.println("Optimization started...");
 		
@@ -88,7 +96,8 @@ public class Main {
 	}
 	
 	
-	public static byte [] buildD (double [][][] graph, int s, RealVector trueParameters, int topN) {
+	public static byte [] buildD (double [][][] graph, byte [][] connected, 
+			int s, double alpha, RealVector trueParameters, int topN) {
 		/** Builds the D set (created links) for synthetic graph and known
 		 *  parameter values, by taking the first topN highest ranked nodes.
 		 *  s is the node whose links we are looking at
@@ -101,7 +110,7 @@ public class Main {
 		
 		// find pageranks
 		double [][] A = buildAdjacencyMatrix(graph, trueParameters);
-		RealMatrix Q = buildTransitionMatrix(A);
+		RealMatrix Q = buildTransitionMatrix(A, connected, s, alpha);
 		double [] rank = pagerank(Q);
 		
 		// sort the ranks
@@ -150,13 +159,19 @@ public class Main {
 	}
 	
 	
-	private static RealMatrix buildTransitionMatrix (double [][] A) {
-		/** Builds the transition matrix for given adjacency matrix*/
+	private static RealMatrix buildTransitionMatrix (double [][] A, byte [][] connected, int s, double alpha) {
+		/** Builds the transition matrix for given adjacency matrix
+		 *  and s as starting node
+		 */  
 		RealMatrix Q = new BlockRealMatrix(A.length, A.length);
 		
 		for (int i = 0; i < A.length; i++) {
 			for (int j = 0; j < A.length; j++) {
-				Q.setEntry(i, j, A[i][j] / sumElements(A[i]));
+				if (j == s)
+					Q.setEntry(i, j, alpha);
+				if (connected[i][j] == 1) 
+					Q.setEntry(i, j, Q.getEntry(i, j) + 
+						(1-alpha) * A[i][j] / sumElements(A[i]));
 			}
 		}
 		
