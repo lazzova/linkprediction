@@ -9,58 +9,9 @@ import org.apache.commons.math3.ml.distance.ManhattanDistance;
 import org.apache.commons.math3.optim.PointValuePair;
 
 public class Main {
-
-	
-	
-	/*
-	public static void main(String[] args) {
-		// EXPECTED RESULTS:      
-		// X1 = 1.5
-		// x2 = -1.75
-		
-		NonLinearConjugateGradientOptimizer opt = new NonLinearConjugateGradientOptimizer(
-				NonLinearConjugateGradientOptimizer.Formula.POLAK_RIBIERE, 
-				new SimplePointChecker(1.0e-5, 1.0e-3, 100));   
-		// create optimizer using Polak-Ribiere formula, and convergence after 10^-5 difference 
-		// between iterations, or 10^-3 cost function, or maximum 100 iterations
-		
-		ObjectiveFunction func = new ObjectiveFunction(new Function());  // Selecting our function as objective
-		ObjectiveFunctionGradient grad = new ObjectiveFunctionGradient(new Gradient()); // Selecting self-defined gradient as objective gradient
-		
-		JDKRandomGenerator rand = new JDKRandomGenerator();
-		rand.setSeed(new Date().getTime()); // creates random generator
-		RandomVectorGenerator rvg = new UncorrelatedRandomVectorGenerator(
-				2, new GaussianRandomGenerator(rand));  // generates random vector of length 2
-		
-		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(opt, 10, rvg);  // creates multistart optimizer
-		
-		PointValuePair optimum =
-	        optimizer.optimize(func, GoalType.MINIMIZE, grad, new InitialGuess(rvg.nextVector()), new MaxEval(100)); 
-		// runs the optimization
-				        
-	    System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
-	        optimum.getPoint()[0] + " " + optimum.getPoint()[1]);
-		
-		
-		/*
-		LinkpredOptimizer lp = new LinkpredOptimizer(null);   // the optimization problem
-		
-		JDKRandomGenerator rand = new JDKRandomGenerator();
-		rand.setSeed(new Date().getTime());
-		RandomVectorGenerator rvg = new UncorrelatedRandomVectorGenerator(
-				2, new GaussianRandomGenerator(rand));
-		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(lp, 10, rvg);
-		
-		PointValuePair optimum = optimizer.optimize(optData)
-		/
-	}
-	*/
 	
 	public static void main(String[] args) {
-		
-		System.out.println("START");
+		/** Main */
 		
 		int n = 100;                                             // number of nodes
 		int f = 2;                                               // number of features
@@ -71,23 +22,15 @@ public class Main {
 			for (int j = 0; j < n; j++)
 				graphs[0][i][j] = Graph.generateFeatures(f);
 		
-		System.out.println("Graph generated...");
-		
 		double alpha = 0.2;
-		double b = 1e-8;
+		double b = 1; //1e-6;
 		double lambda = 1;
-		double [] parameters = {1, -1}; 
+		double [] parameters = {0.5, -0.3}; 
 		byte [][] D = new byte [1][];
 		D[0] = buildD(graphs[0], connected[0], 0, alpha, MatrixUtils.createRealVector(parameters), 10);
 		int [] s = {0};
-		
-		
-		System.out.println("D set found...");
-		
+				
 		LinkpredProblem problem = new LinkpredProblem(graphs, connected, s, D, alpha, lambda, b);
-		
-		System.out.println("Optimization started...");
-		
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
 		

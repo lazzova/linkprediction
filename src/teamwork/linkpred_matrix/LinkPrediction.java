@@ -1,7 +1,5 @@
 package teamwork.linkpred_matrix;
 
-import java.util.Scanner;
-
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -226,6 +224,7 @@ public class LinkPrediction {
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
 			gradient[idx] += 2 * w.getEntry(idx);                // derivative of the regularization term
+			gradient[idx] *= 0.01;                               // add learning rate
 	    }
 	}
 	
