@@ -169,7 +169,8 @@ public class LinkPrediction {
 		// PAGERANK
 		while (manhattan.compute(p, oldP) > EPSILON) {
 			p = Q.preMultiply(p);
-			oldP = p.clone();
+			for (int i = 0; i < n; i++)
+				oldP[i] = p[i];
 		}
 	}
 	
@@ -224,7 +225,7 @@ public class LinkPrediction {
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
 			gradient[idx] += 2 * w.getEntry(idx);                // derivative of the regularization term
-			gradient[idx] *= 0.01;                               // add learning rate
+			//gradient[idx] *= 0.01;                               // add learning rate TODO
 	    }
 	}
 	

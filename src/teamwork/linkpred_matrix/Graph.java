@@ -12,8 +12,9 @@ public class Graph {
 	  *  a vector of features
 	  */
 	
+	/*
 	public static double [] generateFeatures (int f) {
-		/** Generate array of f Gaussian features */
+		/** Generate array of f Gaussian features *//*
 		JDKRandomGenerator rand = new JDKRandomGenerator();
 		rand.setSeed(new Date().getTime()); 
 		RandomVectorGenerator randomVector = 
@@ -22,14 +23,35 @@ public class Graph {
 		
 		return randomVector.nextVector();
 	}
-		
+	*/
+	public static JDKRandomGenerator rand = new JDKRandomGenerator();
+	public static RandomVectorGenerator randomVector = null;
+	
+	public static void initRandom (int f) {
+		/** Set seed and initialize the generator of
+		 *  random vectors of length f
+		 */
+		rand.setSeed(new Date().getTime());
+		randomVector = 
+				new UncorrelatedRandomVectorGenerator(
+				f, new GaussianRandomGenerator(rand));
+	}
+	
+	
+	/*
+	public static double [] generateFeatures () {
+		/** Generate array of f Gaussian features *		
+		return randomVector.nextVector();
+	}
+    */
+
 	public static byte [][] generate (int n) {
 		/** Generate undirected graph with n nodes.
 		 *  Used for testing purpose		 
 		 */
 		
-		JDKRandomGenerator rand = new JDKRandomGenerator();
-		rand.setSeed(new Date().getTime()); 
+		//JDKRandomGenerator rand = new JDKRandomGenerator();
+		//rand.setSeed(new Date().getTime()); 
 				
 		byte [][] g = new byte [n][n];		
 		int [] degCumulative = new int [n];	                     // array for cumulative degree sums

@@ -12,24 +12,48 @@ public class Main {
 	
 	public static void main(String[] args) {
 		/** Main */
+		//TODO
+		System.out.println("Graph generation start");
 		
+		int g = 50;                                              // number of graphs
 		int n = 100;                                             // number of nodes
 		int f = 2;                                               // number of features
-		byte [][][] connected = new byte [1][][];
-		connected[0] = Graph.generate(100);
-		double [][][][] graphs = new double [1][n][n][];
-		for (int i = 0; i < n; i++)
-			for (int j = 0; j < n; j++)
-				graphs[0][i][j] = Graph.generateFeatures(f);
+		
+		Graph.initRandom(f);
+		byte [][][] connected = new byte [g][][];
+		for (int i = 0; i < g; i++)
+			connected[i] = Graph.generate(n);
+		
+		double [][][][] graphs = new double [g][n][n][];
+		for (int k = 0; k < g; k++)
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j <= i; j++) {
+					graphs[k][i][j] = Graph.randomVector.nextVector();
+					graphs[k][j][i] = graphs[k][i][j]; //TODO test if is ok 13:32
+				}
+		
+		//TODO
+		System.out.println("Graph generation end");
 		
 		double alpha = 0.2;
 		double b = 1; //1e-6;
 		double lambda = 1;
-		double [] parameters = {0.5, -0.3}; 
-		byte [][] D = new byte [1][];
-		D[0] = buildD(graphs[0], connected[0], 0, alpha, MatrixUtils.createRealVector(parameters), 10);
-		int [] s = {0};
-				
+		double [] parameters = {1, -1};
+		
+		//TODO
+		System.out.println("Building D start");
+		
+		int topRanked = 15;
+		byte [][] D = new byte [g][];
+		for (int i = 0; i < g; i++)
+			D[i] = buildD(graphs[i], connected[i], 0, alpha, 
+					MatrixUtils.createRealVector(parameters), topRanked);
+		int [] s = new int [g];                                  // every s has index 0
+		
+		//TODO
+		System.out.println("Building D end");
+		System.out.println("Linkprediction started");
+		
 		LinkpredProblem problem = new LinkpredProblem(graphs, connected, s, D, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
@@ -143,7 +167,8 @@ public class Main {
 		
 		while (manhattan.compute(p, oldP) > EPSILON) {
 			p = Q.preMultiply(p);
-			oldP = p.clone();
+			for (int i = 0; i < n; i++)
+				oldP[i] = p[i];
 		}
 		
 		return p;
