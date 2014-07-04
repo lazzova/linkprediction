@@ -1,106 +1,209 @@
 package teamwork.linkpred_matrix;
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
-import org.apache.commons.math3.random.GaussianRandomGenerator;
-import org.apache.commons.math3.random.JDKRandomGenerator;
-import org.apache.commons.math3.random.RandomVectorGenerator;
-import org.apache.commons.math3.random.UncorrelatedRandomVectorGenerator;
+import org.apache.commons.math3.util.Pair;
 
-public class Graph {
-	 /** Theree dimensional matrix, each (i,j)th element is 
-	  *  a vector of features
-	  */
-	
-	/*
-	public static double [] generateFeatures (int f) {
-		/** Generate array of f Gaussian features *//*
-		JDKRandomGenerator rand = new JDKRandomGenerator();
-		rand.setSeed(new Date().getTime()); 
-		RandomVectorGenerator randomVector = 
-				new UncorrelatedRandomVectorGenerator(
-				f, new GaussianRandomGenerator(rand));
-		
-		return randomVector.nextVector();
-	}
-	*/
-	public static JDKRandomGenerator rand = new JDKRandomGenerator();
-	public static RandomVectorGenerator randomVector = null;
-	
-	public static void initRandom (int f) {
-		/** Set seed and initialize the generator of
-		 *  random vectors of length f
-		 */
-		rand.setSeed(new Date().getTime());
-		randomVector = 
-				new UncorrelatedRandomVectorGenerator(
-				f, new GaussianRandomGenerator(rand));
-	}
-	
-	
-	/*
-	public static double [] generateFeatures () {
-		/** Generate array of f Gaussian features *		
-		return randomVector.nextVector();
-	}
-    */
+import cern.colt.function.tdouble.DoubleDoubleFunction;
+import cern.colt.matrix.tdouble.DoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
-	public static byte [][] generate (int n) {
-		/** Generate undirected graph with n nodes.
-		 *  Used for testing purpose		 
-		 */
-		
-		//JDKRandomGenerator rand = new JDKRandomGenerator();
-		//rand.setSeed(new Date().getTime()); 
+
+class Graph {
+	
+	int dim;                                                     // number of nodes 
+	int s;                                                       // the node whose links we learn
+	ArrayList<FeatureField> list;                                // the graph
+	ArrayList<Pair<Integer, Double>> D;                          // the future links set
+	ArrayList<Pair<Integer, Double>> L;                          // the future no-link set
+	SparseCCDoubleMatrix2D A;                                    // the adjacency matrix
+	
+	
+	/**
+	 *  Constructor
+	 *  
+	 *  @param dim
+	 */
+	public Graph (int n) {
+		this.s = 0;
+		this.dim = n;
+		this.list = new ArrayList<FeatureField>();
+		this.A = new SparseCCDoubleMatrix2D(n, n);
+		this.D = new ArrayList<Pair<Integer, Double>>();
+		this.L = new ArrayList<Pair<Integer, Double>>();
+	}
+
+	
+	/**
+	 * Add new matrix element
+	 * 
+	 * @param row
+	 * @param column
+	 * @param features
+	 */
+	public void add (int row, int column, double [] features) {
+		list.add(new FeatureField(row, column, features));
+	}
+	
+	
+	/**
+	 * Get the Adjacency matrix of the graph using exponential function
+	 * 
+	 * @param param
+	 * @return
+	 */
+	public void buildAdjacencyMatrix (DoubleMatrix1D param) {
 				
-		byte [][] g = new byte [n][n];		
-		int [] degCumulative = new int [n];	                     // array for cumulative degree sums
-						
-		g[0][1] = 1;                                             // connect first three nodes in a triad
-		g[1][0] = 1;
-		g[1][2] = 1;  
-		g[2][1] = 1; 
-		g[2][0] = 1; 
-		g[0][2] = 1; 
-		
-		int k;
-		int len;
-		int randNum;
-		for (int i = 3; i < n; i++) {
-			
-			for (int j = 0; j < 3; j++) {                        // generate three links
-				if (rand.nextInt(11) < 8) {                      // select destination node randomly
-					randNum = rand.nextInt(i);
-					g[i][randNum] = 1;
-					g[randNum][i] = 1;					
-				}
-				
-				else {                                           // select destination node proportionaly to its degree
-					degCumulative[0] = countElements(g[0]);
-					for (k = 1; k < i; k++)
-						degCumulative[k] = degCumulative[k-1] + 
-								countElements(g[k]);
-					len = k-1;
-				    randNum = rand.nextInt(degCumulative[len-1] + 1);	
-					k = 0;
-				    while (randNum > degCumulative[k])
-				    	k++;
-				    
-				    g[i][k] = 1;
-					g[k][i] = 1;
-				    
-				}								
-			}			
+		double temp;
+		for (int i = 0; i < list.size(); i++) {
+			temp = Math.exp(param.zDotProduct(list.get(i).features));
+			A.setQuick(list.get(i).row, list.get(i).column, temp);
+			A.setQuick(list.get(i).column, list.get(i).row, temp);
 		}
 		
-		return g;
+		System.out.println("A built.");                          // TODO
 	}
 	
 	
-	private static int countElements (byte [] a) {
-		int count = 0;
-		for (int i = 0; i < a.length; i++)
-			if (a[i] == 1) count++;
-		return count;
+	/**
+	 * Builds the D set (created links) for synthetic graph and known
+	 * parameter values, by taking the first topN highest ranked nodes.
+	 * s is the node whose links we are looking at.
+	 *
+	 * @param topN
+	 * @param trueParameters
+	 * @param s
+	 * @param alpha
+	 */
+	public void buildD (int topN, DoubleMatrix1D trueParameters, int s, double alpha) {
+		this.s = s;
+		
+		// find pageranks
+		buildAdjacencyMatrix(trueParameters);
+		SparseCCDoubleMatrix2D Q = buildTransitionMatrix(s, alpha);
+		DoubleMatrix1D rank = pagerank(Q);
+		
+		// sort the ranks in ascending order
+		for (int i = 0; i < rank.size(); i++)
+			L.add(new Pair<Integer, Double> (i, rank.get(i)));
+		
+		Collections.sort(L, new Comparator<Pair<Integer, Double>> () {
+		
+			@Override
+			public int compare(Pair<Integer, Double> o1,
+					Pair<Integer, Double> o2) {
+				if (o1.getValue() > o2.getValue()) return 1;
+				if (o2.getValue() > o1.getValue()) return -1;
+				return 0;
+			}		
+		});
+		
+		// put the highest ranked in D and remove those from L
+		Pair<Integer, Double> pair;
+		for (int i = 0; D.size() < topN; i++) {
+			pair = L.get(L.size()-i-1);
+			if (pair.getKey() != s && A.get(s, pair.getKey()) == 0) {      // the node is not s, and has no links to s previously
+				D.add(pair);
+				L.remove(L.size()-i-1);
+			}
+		}
+		
+		System.out.println("D built.\n");                          // TODO
 	}
+		
+		
+	/**
+	* Builds the transition matrix for given adjacency matrix
+	* and s as starting node
+	*
+	* @param s
+	* @param alpha
+	* @return SparseCCDoubleMatrix2D
+	*/
+	public SparseCCDoubleMatrix2D buildTransitionMatrix (int s, double alpha) {
+		
+		SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(A.rows(), A.columns());
+		
+		// row sums
+		int r, c;
+		double [] rowSums = new double [A.rows()];
+		for (int i = 0; i < list.size(); i++) {
+			r = list.get(i).row;
+			c = list.get(i).column;
+			rowSums[r] += A.get(r, c);
+			if (r != c)
+				rowSums[c] += A.get(c, r);	
+		}
+		
+		// (1-alpha) * A[i][j] / sumElements(A[i])) + 1(j == s) * alpha
+		double value;
+		for (int i = 0; i < list.size(); i++) {
+			r = list.get(i).row;
+			c = list.get(i).column;
+			value = A.getQuick(r, c);
+			value *= (1 - alpha);
+			value /= rowSums[r];
+			Q.set(r, c, value);
+		
+			if (r == c) continue;
+		
+			value = A.get(c, r);
+			value *= (1 - alpha);
+			value /= rowSums[c];
+			Q.set(c, r, value);
+		}
+		
+		for (int i = 0; i < Q.rows(); i++) {
+			value = Q.getQuick(i, s);
+			value += alpha;
+			Q.setQuick(i, s, value);
+		}
+		
+		System.out.println("Q built.");                          // TODO
+		
+		return Q;				
+	}
+	
+	
+	/**
+	* Calculates the pagerank, given a transition matrix,
+	* using the power method
+	* 
+	* @param Q
+	* @return
+	*/
+	public DoubleMatrix1D pagerank (SparseCCDoubleMatrix2D Q) {
+		
+		int n = Q.rows();
+		DoubleMatrix1D p = new DenseDoubleMatrix1D(n);           // current iteration
+		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // previous iteration
+		SparseCCDoubleMatrix2D Qtranspose = Q.getTranspose();
+		
+		p.assign(1.0 / n);                                       // pagerank initialization 
+		
+		do {
+		
+			for (int i = 0; i < n; i++)
+				oldP.set(i, p.get(i));
+			Qtranspose.zMult(oldP, p);
+					
+			oldP.assign(p, new DoubleDoubleFunction() {
+		
+				@Override
+				public double apply(double arg0, double arg1) {
+					return Math.abs(arg0-arg1);
+				}
+			});
+		
+		} while (oldP.zSum() > 1E-6);                    // convergence check
+		
+		System.out.println("p built.");                          // TODO
+		
+		return p;
+	}
+		
 }
+	
