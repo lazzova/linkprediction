@@ -1,28 +1,10 @@
 package teamwork.linkpred_matrix;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.BlockRealMatrix;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.ml.distance.ManhattanDistance;
 import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.util.Pair;
 
-import cern.colt.function.tdouble.DoubleDoubleFunction;
-import cern.colt.function.tdouble.DoubleFunction;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
-import cern.colt.matrix.tdouble.DoubleMatrix2D;
-import cern.colt.matrix.tdouble.algo.DenseDoubleAlgebra;
-import cern.colt.matrix.tdouble.algo.solver.DefaultDoubleIterationMonitor;
-import cern.colt.matrix.tdouble.algo.solver.IterativeSolverDoubleNotConvergedException;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
-import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
+
 
 public class Main {
 	
@@ -36,20 +18,20 @@ public class Main {
 		long start = System.nanoTime();
 		System.out.println("Graph generation start");            //TODO
 		
-		int g = 50;                                              // number of graphs
-		int n = 10000;                                           // number of nodes
-		int f = 2;                                               // number of features
+		int g = 50;                                              // number of graphs   50
+		int n = 1000;                                            // number of nodes    10000
+		int f = 2;                                               // number of features 2
 		
 		GraphGeneration.initRandom(f);                                     // build the graph
-		Graph [] featureMat = new Graph [g];
+		Graph [] graph = new Graph [g];
 		for (int i = 0; i < g; i++)
-			featureMat[i] = GraphGeneration.generate(n);
+			graph[i] = GraphGeneration.generate(n);
 		
 		System.out.println("Graph generation end");				 //TODO
 		
-		int s = 0;                                               // the node whose links we learn
+		int [] s = new int [g];                                  // the node whose links we learn, in this case 0 for each graph
 		double alpha = 0.2;                                      // damping factor
-		double b = 1; //1e-6;                                    // WMW function parameter
+		double b = 1e-3; //1e-6;                                 // WMW function parameter
 		double lambda = 1;                                       // regularization parameter 
 		double [] param = {1, -1};                               // parameters vector
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);
@@ -59,23 +41,24 @@ public class Main {
 		
 		int topRanked = 15;                                      // building D set (linked set)
 		for (int i = 0; i < g; i++)
-			featureMat[i].buildD(topRanked, parameters, s, alpha);
+			graph[i].buildD(topRanked, parameters, s[i], alpha);
 				
 		//TODO
+		/*
 		long end = System.nanoTime();
 		System.out.println("Building D end");
 		System.out.println("Graph generation finished in " + (end-start)/1E9 + " seconds");
 		System.out.println("Memory used: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1E6 + "MB");
-				
+        */		
 		
-		/*
-		LinkpredProblem problem = new LinkpredProblem(graphs, connected, s, D, alpha, lambda, b);
+		LinkpredProblem problem = new LinkpredProblem(graph, f, s, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
 		
 		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
 		        optimum.getPoint()[0] + " " + optimum.getPoint()[1]);
-		*/
+		long end = System.nanoTime();
+		System.out.println("Results in in " + (end-start)/60E9 + " minutes.");
 	}
 	
 	

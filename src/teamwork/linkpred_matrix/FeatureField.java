@@ -8,6 +8,7 @@ public class FeatureField {
 	int column;
 	DoubleMatrix1D features;
 	
+	
 	/**
 	 * Constructor
 	 * 
@@ -22,9 +23,20 @@ public class FeatureField {
 		this.features = new DenseDoubleMatrix1D(features);
 	}
 	
+	
 	/**
 	 * Constructor
 	 */
 	public FeatureField () {}
+	
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) return false;
+		if (this.getClass() != obj.getClass()) return false;
+		return column == ((FeatureField) obj).column && 
+				row == ((FeatureField) obj).row;
+	}
+	
 
 }

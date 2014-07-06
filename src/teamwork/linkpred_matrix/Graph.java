@@ -21,6 +21,9 @@ class Graph {
 	ArrayList<Pair<Integer, Double>> L;                          // the future no-link set
 	SparseCCDoubleMatrix2D A;                                    // the adjacency matrix
 	
+	// useful
+	double [] rowSums;                                           // sum of the each row of the adjacency matrix
+	
 	
 	/**
 	 *  Constructor
@@ -34,6 +37,7 @@ class Graph {
 		this.A = new SparseCCDoubleMatrix2D(n, n);
 		this.D = new ArrayList<Pair<Integer, Double>>();
 		this.L = new ArrayList<Pair<Integer, Double>>();
+		this.rowSums = new double [dim];                         // filled in the buildTransitionMatrix method
 	}
 
 	
@@ -45,7 +49,9 @@ class Graph {
 	 * @param features
 	 */
 	public void add (int row, int column, double [] features) {
-		list.add(new FeatureField(row, column, features));
+		FeatureField ff = new FeatureField(row, column, features);
+		if (!list.contains(ff))
+			list.add(new FeatureField(row, column, features));
 	}
 	
 	
@@ -60,11 +66,9 @@ class Graph {
 		double temp;
 		for (int i = 0; i < list.size(); i++) {
 			temp = Math.exp(param.zDotProduct(list.get(i).features));
-			A.setQuick(list.get(i).row, list.get(i).column, temp);
-			A.setQuick(list.get(i).column, list.get(i).row, temp);
-		}
-		
-		System.out.println("A built.");                          // TODO
+			A.set(list.get(i).row, list.get(i).column, temp);
+			A.set(list.get(i).column, list.get(i).row, temp);
+		}		
 	}
 	
 	
@@ -109,9 +113,7 @@ class Graph {
 				D.add(pair);
 				L.remove(L.size()-i-1);
 			}
-		}
-		
-		System.out.println("D built.\n");                          // TODO
+		}		
 	}
 		
 		
@@ -129,7 +131,7 @@ class Graph {
 		
 		// row sums
 		int r, c;
-		double [] rowSums = new double [A.rows()];
+		for (int i = 0; i < dim; rowSums[i++] = 0);
 		for (int i = 0; i < list.size(); i++) {
 			r = list.get(i).row;
 			c = list.get(i).column;
@@ -143,7 +145,7 @@ class Graph {
 		for (int i = 0; i < list.size(); i++) {
 			r = list.get(i).row;
 			c = list.get(i).column;
-			value = A.getQuick(r, c);
+			value = A.get(r, c);
 			value *= (1 - alpha);
 			value /= rowSums[r];
 			Q.set(r, c, value);
@@ -157,12 +159,10 @@ class Graph {
 		}
 		
 		for (int i = 0; i < Q.rows(); i++) {
-			value = Q.getQuick(i, s);
+			value = Q.get(i, s);
 			value += alpha;
-			Q.setQuick(i, s, value);
+			Q.set(i, s, value);
 		}
-		
-		System.out.println("Q built.");                          // TODO
 		
 		return Q;				
 	}
@@ -200,10 +200,7 @@ class Graph {
 		
 		} while (oldP.zSum() > 1E-6);                    // convergence check
 		
-		System.out.println("p built.");                          // TODO
-		
 		return p;
-	}
-		
+	}		
 }
 	
