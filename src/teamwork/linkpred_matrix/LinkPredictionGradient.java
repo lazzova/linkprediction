@@ -11,7 +11,13 @@ public class LinkPredictionGradient implements MultivariateVectorFunction {
 
 	@Override
 	public double[] value(double[] point) throws IllegalArgumentException {
-		return lp.getGradient();
+		//System.out.println("gradient");
+		double [] grad = lp.getGradient();
+		//System.out.println();
+		//for (int i = 0; i < grad.length; i++) 
+		//	System.out.print(grad[i] + " ");
+		//System.out.println();
+		return grad;
 	}
 
 }
