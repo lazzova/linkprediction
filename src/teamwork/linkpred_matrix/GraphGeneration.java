@@ -30,10 +30,12 @@ public class GraphGeneration {
 	 * Used for testing purpose	
 	 *  
 	 * @param n
+	 * @param f
+	 * @param s
 	 * @return FeatureMatrix
 	 */
-	public static Graph generate (int n) {
-		Graph fm = new Graph(n);
+	public static Graph generate (int n, int f) {
+		Graph fm = new Graph(n, f);
 				
 		int [] degCumulative = new int [n];	                     // array for cumulative degree sums
 		int [] deg = new int [n];                                // array of node degrees
