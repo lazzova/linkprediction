@@ -91,9 +91,10 @@ class Graph {
 		DoubleMatrix1D rank = pagerank(Q);
 		
 		// sort the ranks in ascending order
-		for (int i = 0; i < rank.size(); i++)
-			L.add(new Pair<Integer, Double> (i, rank.get(i)));
-		
+		for (int i = 0; i < rank.size(); i++) 
+			if (i != s && A.get(s, i) == 0)                      // the node is not s, and has no links to s previously
+				L.add(new Pair<Integer, Double> (i, rank.get(i)));
+				
 		Collections.sort(L, new Comparator<Pair<Integer, Double>> () {
 		
 			@Override
@@ -106,13 +107,9 @@ class Graph {
 		});
 		
 		// put the highest ranked in D and remove those from L
-		Pair<Integer, Double> pair;
-		for (int i = 0; D.size() < topN; i++) {
-			pair = L.get(L.size()-i-1);
-			if (pair.getKey() != s && A.get(s, pair.getKey()) == 0) {      // the node is not s, and has no links to s previously
-				D.add(pair);
-				L.remove(L.size()-i-1);
-			}
+		while (D.size() < topN) {
+			D.add(L.get(L.size()-1));
+			L.remove(L.size()-1);			
 		}		
 	}
 		
@@ -141,6 +138,7 @@ class Graph {
 		}
 		
 		// (1-alpha) * A[i][j] / sumElements(A[i])) + 1(j == s) * alpha
+		// build the transpose of Q  TODO
 		double value;
 		for (int i = 0; i < list.size(); i++) {
 			r = list.get(i).row;
@@ -148,20 +146,20 @@ class Graph {
 			value = A.get(r, c);
 			value *= (1 - alpha);
 			value /= rowSums[r];
-			Q.set(r, c, value);
+			Q.set(c, r, value);
 		
 			if (r == c) continue;
 		
 			value = A.get(c, r);
 			value *= (1 - alpha);
 			value /= rowSums[c];
-			Q.set(c, r, value);
+			Q.set(r, c, value);
 		}
 		
 		for (int i = 0; i < Q.rows(); i++) {
-			value = Q.get(i, s);
+			value = Q.get(s, i);
 			value += alpha;
-			Q.set(i, s, value);
+			Q.set(s, i, value);
 		}
 		
 		return Q;				
@@ -180,15 +178,15 @@ class Graph {
 		int n = Q.rows();
 		DoubleMatrix1D p = new DenseDoubleMatrix1D(n);           // current iteration
 		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // previous iteration
-		SparseCCDoubleMatrix2D Qtranspose = Q.getTranspose();
+		//SparseCCDoubleMatrix2D Qtranspose = Q.getTranspose();  TODO
 		
 		p.assign(1.0 / n);                                       // pagerank initialization 
 		
 		do {
 		
-			for (int i = 0; i < n; i++)
-				oldP.set(i, p.get(i));
-			Qtranspose.zMult(oldP, p);
+			oldP.assign(p);
+			// Qtranspose.zMult(oldP, p);  TODO
+			Q.zMult(oldP, p);
 					
 			oldP.assign(p, new DoubleDoubleFunction() {
 		

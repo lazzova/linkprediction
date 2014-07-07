@@ -127,7 +127,7 @@ public class LinkPrediction {
 		// TODO : Testing
 		double EPSILON = 1e-6;
 		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // the value of p in the previous iteration
-		SparseCCDoubleMatrix2D Qtranspose = Q.getTranspose();  
+		//SparseCCDoubleMatrix2D Qtranspose = Q.getTranspose();  
 				
 		DoubleMatrix1D oldDp = new DenseDoubleMatrix1D(n);       // the value of dp in the previous iteration
 		                                                         // ...starts with all entries 0 
@@ -142,7 +142,8 @@ public class LinkPrediction {
 				oldDp.assign(dp[k]);
 				
 				transitionDerivative(graph, k).getTranspose().zMult(p, tmp); 
-				Qtranspose.zMult(oldDp, dp[k]); 
+				//Qtranspose.zMult(oldDp, dp[k]);  TODO
+				Q.zMult(oldDp, dp[k]);
 				dp[k].assign(tmp, DoubleFunctions.plus);
 				
 				oldDp.assign(dp[k], new DoubleDoubleFunction() {
@@ -154,18 +155,17 @@ public class LinkPrediction {
 				});
 				
 				// calculate next iteration page rank
-				Qtranspose.zMult(p.copy(), p);  	
-				
+				// Qtranspose.zMult(p.copy(), p); TODO  	
+				Q.zMult(p.copy(), p);
 			} while (oldDp.zSum() > EPSILON);		
 		}
 		
 		// PAGERANK
 		do {
 			
-			//for (int i = 0; i < n; i++)                        TODO
-			//	oldP.set(i, p.get(i));
 			oldP.assign(p);
-			Qtranspose.zMult(oldP, p); 
+			// Qtranspose.zMult(oldP, p); TODO
+			Q.zMult(oldP, p);
 								
 			oldP.assign(p, new DoubleDoubleFunction() {
 		
@@ -241,8 +241,7 @@ public class LinkPrediction {
 	    
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
-			gradient[idx] += 2 * w.get(idx);                       // derivative of the regularization term
-			//gradient[idx] *= 0.01;                               // add learning rate TODO
+			gradient[idx] += 2 * w.get(idx);                       // derivative of the regularization term			
 	    }
 	}
 	
