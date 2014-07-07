@@ -1,247 +1,273 @@
 package teamwork.linkpred_matrix;
 
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.BlockRealMatrix;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.ml.distance.ManhattanDistance;
+import cern.colt.function.tdouble.DoubleDoubleFunction;
+import cern.colt.matrix.tdouble.DoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
+import cern.jet.math.tdouble.DoubleFunctions;
 
 public class LinkPrediction {
 	private int g;                                               // number of graphs
 	private int n;                                               // number of nodes
 	private int f;                                               // number of features
-	private byte [][][] connected;                               // g matrices, each (i, j)th element is 1 if i and j are linked, 0 otherwise
-	private double [][][][] graphs;                              // g graphs for which, each (i,j)th element is a feature vector of the link between i and j
+	private Graph [] graphs;                                     // all the graphs
 	private double alpha;                                        // damping factor
 	private double lambda;                                       // regularization parameter
 	private double b;                                            // b parameter for the WMW loss function
-	private double [] p;                                         // page rank
-	private double [][] dp;                                      // page rank gradient
-	private double [][] A;                                       // adjacency matrix
-	private RealMatrix Q;                                        // transition matrix	
-	private int [] s;                                            // array od indices of all s nodes (MIGHT NOT BE NEEDED)
-	private byte [][] D;                                         // nodes s will link to in the future 
-	                                                             //     if i-th node is in d, d[i] = 1
-	                                                             //     i-th row is the D set for s[i]
-	
+	private DoubleMatrix1D p;                                    // page rank
+	private DoubleMatrix1D [] dp;                                // page rank gradient 
+	private SparseCCDoubleMatrix2D Q;                            // transition matrix 
+	private int [] s;                                            // array of indices of all s nodes 
 	private double J;                                            // cost
 	private double [] gradient;                                  // gradient
 	
 	
-	public LinkPrediction(double [][][][] graphs, byte [][][] connected, 
-			int [] s, byte [][] D, double alpha, double lambda, double b) {
-		/** Constructor */
+	/**
+	 * Constructor
+	 * 
+	 * @param graphs
+	 * @param f
+	 * @param s
+	 * @param D
+	 * @param alpha
+	 * @param lambda
+	 * @param b
+	 */
+	public LinkPrediction(Graph [] graphs, int f, int [] s, double alpha, double lambda, double b) {
+		
 		this.g = graphs.length;
-		this.n = graphs[0].length;
-		this.f = graphs[0][0][0].length;
+		this.n = graphs[0].dim;
+		this.f = f;
 		this.graphs = graphs;
-		this.connected = connected;
 		this.alpha = alpha;
 		this.lambda = lambda;
 		this.s = s;
 		this.b = b;                                              // needed olnly if WMW loss function is used
-		this.A = new double [n][n];
-		this.Q = new BlockRealMatrix(n, n);
-		this.p = new double [n];
-		this.dp = new double [f][n];                             // partial deriv of each pagerankvalue are column vectors
-		this.D = D;
+		this.Q = null;
+		this.p = new DenseDoubleMatrix1D(n);
+		this.dp = new DoubleMatrix1D [f];                        // partial derivative of each pagerank value are column vectors 
+		for (int i = 0; i < f; i++)
+			dp[i] = new DenseDoubleMatrix1D(n);
 		this.gradient = new double [f];
 		this.J = Double.MAX_VALUE;
 	}
 
 	
-	private void buildAdjacencyMatrix (int k, RealVector param) {
-		/** Builds the adjacency matrix for the k-th graph, using exponential 
-		 * edge-strength function, logistic function is the other option.
-		 */
-		for (int i = 0; i < n; i++) 
-			for (int j = 0; j < n; j++) 
-				A[i][j] = Math.exp(
-						param.dotProduct(new ArrayRealVector(graphs[k][i][j])));
+	/**
+	 * Calculate partial derivative of the weight function (exponential funcion 
+	 * considered) parameterized by w, with respect to the index-th parameter
+	 * for the given graph
+	 * 
+	 * @param graphIndex
+	 * @param nodeIndex
+	 * @param featureIndex
+	 * @return double
+	 */
+	public double edgeWeightPartialD (int graphIndex, int nodeIndex, int row, int column, int featureIndex) {
+		
+		return graphs[graphIndex].A.get(row, column) * 
+			   graphs[graphIndex].list.get(nodeIndex).features.get(featureIndex);
 	}
 	
 	
-	private void buildTransitionMatrix (int k) {
-		/** Builds the transition matrix for given adjacency 
-		 *  matrix and k-th graph 
-		 */		
-		for (int i = 0; i < A.length; i++) {
-			for (int j = 0; j < A.length; j++) {
-				if (j == s[k])
-					Q.setEntry(i, j, alpha);
-				if (connected[k][i][j] == 1) 
-					Q.setEntry(i, j, Q.getEntry(i, j) + 
-						(1-alpha) * A[i][j] / sumElements(A[i]));
-			}
-		}		
-	}
-	
-	private double sumElements (double [] a) {
-		/** Sums the elements of an array */
-		double sum = 0;
-		for (int i = 0; i < a.length; i++)
-			sum += a[i];
-		return sum;
-	}
-	
-	
-	public double edgeWeightPartialD (int graph, int i, int j, int index) {
-		/** Calculate partial derivative of the weight function (exponential funcion 
-		 *  considered) parameterized by w, with respect to the index-th parameter
-		 *  for the given graph
-		 */
-		return A[i][j] * graphs [graph][i][j][index];
-	}
-	
-	
-	public RealMatrix transitionDerivative (int graph, int column, int index) {
-		/** Returns array of partial derivatives of the (i, column) entries
-		 *  of the transition matrix with respect to the index-th parameter
-		 *  for the given graph
-		 */
-		// TODO: Try to find more vectorized approach
+	/**
+	 * Returns matrix of partial derivatives of the transition matrix
+	 *  with respect to the featureIndex-th parameter for the given graph 
+     * 
+	 * @param graph
+	 * @param featureIndex
+	 * @return SparseCCDoubleMatrix2D
+	 */
+	public SparseCCDoubleMatrix2D transitionDerivative (int graph, int featureIndex) {
+				
 		// TODO: Testing
+		SparseCCDoubleMatrix2D dQ = new SparseCCDoubleMatrix2D(n, n);
 		
-		RealMatrix d = new BlockRealMatrix(n, 1); 
-		double tmp;
-		double sum;
-		double sumSquared;
-		for (int i = 0; i < n; i++) {
-			tmp = edgeWeightPartialD(graph, i, column, index);		
-			sum = 0;
-			for (int j = 0; j < n; j++)
-				sum += A[i][j];
-			tmp *= sum;
-			
-			sumSquared = sum * sum;
-			
-			sum = 0;
-			for (int j = 0; j < n; j++)
-				sum += edgeWeightPartialD(graph, i, j, index);
-			sum *= A[i][column];
-			tmp -= sum;
-			
-			tmp /= sumSquared;
-			tmp *= (1-alpha);
-			d.setEntry(i, 0, tmp);			
+		// derivative row sums
+		int r, c;
+		double [] dRowSums = new double [n];
+		for (int i = 0; i < graphs[graph].list.size(); i++) {
+			r = graphs[graph].list.get(i).row;
+			c = graphs[graph].list.get(i).column;
+			dRowSums[r] += edgeWeightPartialD(graph, i, r, c, featureIndex);
+			if (r != c)
+				dRowSums[c] +=edgeWeightPartialD(graph, i, r, c, featureIndex);	
 		}
+		
+		double value;
+		for (int i = 0; i < graphs[graph].list.size(); i++) {
+			r = graphs[graph].list.get(i).row;
+			c = graphs[graph].list.get(i).column;
+			value = (edgeWeightPartialD(graph, i, r, c, featureIndex) * graphs[graph].rowSums[r]) -
+					(graphs[graph].A.get(r, c) * dRowSums[r]);
+			value *= (1 - alpha);
+			value /= Math.pow(graphs[graph].rowSums[r], 2);
+			dQ.set(r, c, value);
 			
-		return d;
+			if (c == r) continue;
+			
+			value = (edgeWeightPartialD(graph, i, c, r, featureIndex) * graphs[graph].rowSums[c]) -
+					(graphs[graph].A.get(c, r) * dRowSums[c]);
+			value *= (1 - alpha);
+			value /= Math.pow(graphs[graph].rowSums[c], 2);
+			dQ.set(c, r, value);
+		}
+				
+		return dQ;
 	}
 	
 	
+	/**
+	 * Calculates pagerank and it's gradient, for given graph index
+	 *  
+	 * @param graph
+	 */
 	private void pageRankAndGradient (int graph) {
-		/** Calculates pagerank and it's gradient, for given graph */
-		// TODO : This method can be optimized
-		// TODO
-		
-		double EPSILON = 1e-12;
-		double diff = Double.MAX_VALUE;
-		ManhattanDistance manhattan = new ManhattanDistance();
 				
-		double [] oldP = new double [n];                         // the value of p in the previous iteration
-		double [][] oldDp = new double [f][n];                   // the value of dp in the previous iteration
+		// TODO : Testing
+		double EPSILON = 1e-6;
+		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // the value of p in the previous iteration
+		//SparseCCDoubleMatrix2D Qtranspose = Q.getTranspose();  
+				
+		DoubleMatrix1D oldDp = new DenseDoubleMatrix1D(n);       // the value of dp in the previous iteration
 		                                                         // ...starts with all entries 0 
-		
-		for (int i = 0; i < n; i++)                              // pagerank initialization 
-			p[i] = 1.0 / (double)n;
-								
-		// PAGERANK GRADIENT
-		for (int k = 0; k < f; k++) {                            // for every parameter
-			diff = Double.MAX_VALUE;
-			while (diff > EPSILON) {
-				for (int u = 0; u < n; u++) {
-					dp[k][u] = Q.getColumnMatrix(u).preMultiply(oldDp[k])[0] +
-					      transitionDerivative(graph, u, k).preMultiply(p)[0];
-				}
-				diff = manhattan.compute(dp[k], oldDp[k]);
+		p.assign(1.0 / n);                                       // pagerank initialization 
 				
-				for (int u = 0; u < n; u++)
-					oldDp[k][u] = dp[k][u];
+		// PAGERANK GRADIENT
+		DoubleMatrix1D tmp = new DenseDoubleMatrix1D(n);;
+		for (int k = 0; k < f; k++) {                            // for every parameter
+			oldDp.assign(DoubleFunctions.constant(0));
+			p.assign(1.0 / n);                                   // TODO not sure if new initialization is needed each time
+			do {
+				oldDp.assign(dp[k]);
+				
+				transitionDerivative(graph, k).getTranspose().zMult(p, tmp); 
+				//Qtranspose.zMult(oldDp, dp[k]);  TODO
+				Q.zMult(oldDp, dp[k]);
+				dp[k].assign(tmp, DoubleFunctions.plus);
+				
+				oldDp.assign(dp[k], new DoubleDoubleFunction() {
+					
+					@Override
+					public double apply(double arg0, double arg1) {
+						return Math.abs(arg0-arg1);
+					}
+				});
 				
 				// calculate next iteration page rank
-				p = Q.preMultiply(p);								
-			}		
+				// Qtranspose.zMult(p.copy(), p); TODO  	
+				Q.zMult(p.copy(), p);
+			} while (oldDp.zSum() > EPSILON);		
 		}
-		
 		
 		// PAGERANK
-		while (manhattan.compute(p, oldP) > EPSILON) {
-			p = Q.preMultiply(p);
-			for (int i = 0; i < n; i++)
-				oldP[i] = p[i];
-		}
+		do {
+			
+			oldP.assign(p);
+			// Qtranspose.zMult(oldP, p); TODO
+			Q.zMult(oldP, p);
+								
+			oldP.assign(p, new DoubleDoubleFunction() {
+		
+				@Override
+				public double apply(double arg0, double arg1) {
+					return Math.abs(arg0-arg1);
+				}
+			});
+		
+		} while (oldP.zSum() > EPSILON);                         // convergence check
 	}
 	
 	
+	/**
+	 * Calculates the Wilcoxon-Mann-Whitney loss function
+	 * 
+	 * @param x
+	 * @return double
+	 */
 	public double WMWloss (double x) {
-		/** Calculates the Wilcoxon-Mann-Whitney loss function */
-		// TODO: Testing
 		return 1.0 / (1+ Math.exp(-x/b));
 	}
 	
+	
+	/**
+	 * Calculates the derivative of the Wilcoxon-Mann-Whitney 
+	 * loss function with respect to (pl - pd)
+     * 
+	 * @param x
+	 * @return double
+	 */
 	public double WMWderivative (double x) {
-		/** Calculates the derivative of the 
-		 *  Wilcoxon-Mann-Whitney loss function 
-		 */
-		// TODO: Testing
 		double tmp = 1.0 / (1+ Math.exp(x/b));
 		return tmp * (1-tmp) / b;     		
 	}
 	
 	
-	public void costFunctionAndGradient (RealVector w) {
-		/** Calculates the fitting error J 
-		 *  given initial parameter vector 
-		 */		
+	/**
+	 * Calculates the fitting error J 
+	 * given initial parameter vector 
+	 * 
+	 * @param w
+	 */
+	public void costFunctionAndGradient (DoubleMatrix1D w) {			
 		// TODO: Testing (especially with the gradient calculation)
 		
-		double regTerm = w.dotProduct(w);                        // regularization term
+		double regTerm = w.zDotProduct(w);                       // regularization term
 		double errorTerm = 0;                                    // error term
 		
 		for (int k = 0; k < g; k++) {                            // for each graph
-			buildAdjacencyMatrix(k, w);
-			buildTransitionMatrix(k);
-			pageRankAndGradient(k);
-			
-			for (int i = 0; i < D[k].length; i++) {
-				if (D[k][i] == 1) {                                                  // has link
-					for (int j = 0; j < n; j++) { 
-						if (D[k][j] == 0) {                                          // no link
-							errorTerm += WMWloss(p[j] - p[i]);
-							for (int idx = 0; idx < f; idx++) {                      // for each element of the gradient vector
-								gradient[idx] += (WMWderivative(p[j] - p[i]) *       // derivative of the error term
-			    			    	    (dp[idx][j] - dp[idx][i]));								
-							}
-						}
+			graphs[k].buildAdjacencyMatrix(w);
+			Q = graphs[k].buildTransitionMatrix(s[k], alpha);
+			pageRankAndGradient(k); 
+		
+     		int l, d;
+			double delta;                                                            // pl - pd
+			for (int i = 0; i < graphs[k].D.size(); i++) {                           // has link
+				for (int j = 0; j < graphs[k].L.size(); j++) {                       // no link
+					l = graphs[k].L.get(j).getKey();
+					d = graphs[k].D.get(i).getKey();
+					delta = p.get(l) - p.get(d);
+										
+					errorTerm += WMWloss(delta);
+					for (int idx = 0; idx < f; idx++) {                              // for each element of the gradient vector
+						gradient[idx] += (WMWderivative(delta) *                     // derivative of the error term
+	    			    	    (dp[idx].get(l) - dp[idx].get(d)));					 
 					}
 				}
-			}
+			}			
 		}
 		
 	    J = regTerm + lambda * errorTerm;
 	    
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
-			gradient[idx] += 2 * w.getEntry(idx);                // derivative of the regularization term
-			//gradient[idx] *= 0.01;                               // add learning rate TODO
+			gradient[idx] += 2 * w.get(idx);                       // derivative of the regularization term			
 	    }
 	}
 	
 	
+	/**
+	 * Calculates cost function and gradient
+	 * and returns cost function value
+	 * 
+	 * @param w
+	 * @return double
+	 */
 	public double getCost (double []  w) {
-		/** Calculates cost function and gradient
-		 *  and returns cost function value
-		 */
-		costFunctionAndGradient(MatrixUtils.createRealVector(w));
+		costFunctionAndGradient(new DenseDoubleMatrix1D(w));
 		return J;
 	}
 	
+	
+	/**
+	 * Returns the gradient of the cost function
+	 * 
+	 * @return double []
+	 */
 	public double [] getGradient () {
-		/** Returns the gradient of the cost function */
 		return gradient;
 	}
+	
 	
 	public int getParametersNumber () {
 		return f;
