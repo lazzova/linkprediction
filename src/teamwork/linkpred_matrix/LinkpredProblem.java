@@ -40,12 +40,12 @@ public class LinkpredProblem {
 				lp.getParametersNumber(), new GaussianRandomGenerator(rand));                            // generates random vector of initial parameters
 		
 		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(opt, 100, rvg);                                      // creates multistart optimizer with 500 starting points
+				new MultiStartMultivariateOptimizer(opt, 50, rvg);                                       // creates multistart optimizer with 500 starting points
 		
 		System.out.println("And we are running ...");
 		
 		optimum = optimizer.optimize(
-				func, GoalType.MINIMIZE, grad, new InitialGuess(rvg.nextVector()), new MaxEval(1000));   // runs the optimization    
+				func, GoalType.MINIMIZE, grad, new InitialGuess(rvg.nextVector()), new MaxEval(100));    // runs the optimization    
 		
 	}
 	
