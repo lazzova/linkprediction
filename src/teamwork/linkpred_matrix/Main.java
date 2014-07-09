@@ -17,7 +17,7 @@ public class Main {
 		
 		System.out.println("Graph generation start");            //TODO
 		
-		int g = 10;                                             // number of graphs   50
+		int g = 20;                                             // number of graphs   50
 		int n = 100;                                            // number of nodes    10000
 		int f = 2;                                              // number of features 2
 		

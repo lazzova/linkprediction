@@ -234,9 +234,9 @@ class Graph {
 	 * @param featureIndex
 	 * @return SparseCCDoubleMatrix2D
 	 */
-	public SparseCCDoubleMatrix2D transitionDerivative (int featureIndex, double alpha) {
+	public SparseCCDoubleMatrix2D transitionDerivativeTranspose (int featureIndex, double alpha) {
 		
-		SparseCCDoubleMatrix2D dQ = new SparseCCDoubleMatrix2D(dim, dim);
+		SparseCCDoubleMatrix2D dQt = new SparseCCDoubleMatrix2D(dim, dim);
 		
 		// derivative row sums
 		int r, c;
@@ -257,7 +257,8 @@ class Graph {
 					(A.get(r, c) * dRowSums[r]);
 			value *= (1 - alpha);
 			value /= Math.pow(rowSums[r], 2);
-			dQ.set(r, c, value);
+			//dQ.set(r, c, value); TODO  Return directly the transpose
+			dQt.set(c, r, value);
 			
 			if (c == r) continue;
 			
@@ -265,10 +266,11 @@ class Graph {
 					(A.get(c, r) * dRowSums[c]);
 			value *= (1 - alpha);
 			value /= Math.pow(rowSums[c], 2);
-			dQ.set(c, r, value);
+			//dQ.set(c, r, value);
+			dQt.set(r, c, value);
 		}
 				
-		return dQ;
+		return dQt;
 	}
 	
 	
@@ -288,14 +290,15 @@ class Graph {
 		                                                           // ...starts with all entries 0 
 		// PAGERANK GRADIENT
 		DoubleMatrix1D tmp = new DenseDoubleMatrix1D(dim);;
-		for (int k = 0; k < f; k++) {                            // for every parameter
+		for (int k = 0; k < f; k++) {                              // for every parameter
 			oldDp.assign(DoubleFunctions.constant(0));
 			p.assign(1.0 / dim); 
-			dp[k].assign(DoubleFunctions.constant(0));           
+			dp[k].assign(DoubleFunctions.constant(0));             
 			do {
 				oldDp.assign(dp[k]);
 				
-				transitionDerivative(k, alpha).getTranspose().zMult(p, tmp); 
+				//transitionDerivative(k, alpha).getTranspose().zMult(p, tmp); TODO
+				transitionDerivativeTranspose(k, alpha).zMult(p, tmp);
 				Qt.zMult(oldDp, dp[k]);
 				dp[k].assign(tmp, DoubleFunctions.plus);
 				
