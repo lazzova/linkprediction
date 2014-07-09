@@ -71,10 +71,14 @@ class Graph {
 	public void buildAdjacencyMatrix (DoubleMatrix1D param) {
 				
 		double temp;
+		int r, c;
 		for (int i = 0; i < list.size(); i++) {
+			r = list.get(i).row;
+			c = list.get(i).column;
 			temp = Math.exp(param.zDotProduct(list.get(i).features));
-			A.set(list.get(i).row, list.get(i).column, temp);
-			A.set(list.get(i).column, list.get(i).row, temp);
+			A.set(r, c, temp);
+			if (r != c)
+				A.set(c, r, temp);
 		}		
 	}
 	
@@ -145,7 +149,7 @@ class Graph {
 		}
 		
 		// (1-alpha) * A[i][j] / sumElements(A[i])) + 1(j == s) * alpha
-		// build the transpose of Q  TODO
+		// build the transpose of Q 
 		double value;
 		for (int i = 0; i < list.size(); i++) {
 			r = list.get(i).row;
@@ -180,20 +184,18 @@ class Graph {
 	* @param Q
 	* @return
 	*/
-	public DoubleMatrix1D pagerank (SparseCCDoubleMatrix2D Q) {
+	public DoubleMatrix1D pagerank (SparseCCDoubleMatrix2D Qt) {
 		
-		int n = Q.rows();
+		int n = Qt.rows();
 		DoubleMatrix1D p = new DenseDoubleMatrix1D(n);           // current iteration
 		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // previous iteration
-		//SparseCCDoubleMatrix2D Qtranspose = Q.getTranspose();  TODO
-		
+				
 		p.assign(1.0 / n);                                       // pagerank initialization 
 		
 		do {
 		
 			oldP.assign(p);
-			// Qtranspose.zMult(oldP, p);  TODO
-			Q.zMult(oldP, p);
+			Qt.zMult(oldP, p);
 					
 			oldP.assign(p, new DoubleDoubleFunction() {
 		
@@ -233,8 +235,7 @@ class Graph {
 	 * @return SparseCCDoubleMatrix2D
 	 */
 	public SparseCCDoubleMatrix2D transitionDerivative (int featureIndex, double alpha) {
-				
-		// TODO: Testing
+		
 		SparseCCDoubleMatrix2D dQ = new SparseCCDoubleMatrix2D(dim, dim);
 		
 		// derivative row sums
@@ -245,7 +246,7 @@ class Graph {
 			c = list.get(i).column;
 			dRowSums[r] += edgeWeightPartialD(i, r, c, featureIndex);
 			if (r != c)
-				dRowSums[c] +=edgeWeightPartialD(i, r, c, featureIndex);	
+				dRowSums[c] +=edgeWeightPartialD(i, c, r, featureIndex);	
 		}
 		
 		double value;
@@ -289,7 +290,8 @@ class Graph {
 		DoubleMatrix1D tmp = new DenseDoubleMatrix1D(dim);;
 		for (int k = 0; k < f; k++) {                            // for every parameter
 			oldDp.assign(DoubleFunctions.constant(0));
-			p.assign(1.0 / dim);                                 
+			p.assign(1.0 / dim); 
+			dp[k].assign(DoubleFunctions.constant(0));           
 			do {
 				oldDp.assign(dp[k]);
 				
