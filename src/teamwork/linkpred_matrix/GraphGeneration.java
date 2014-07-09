@@ -12,6 +12,7 @@ public class GraphGeneration {
 	public static JDKRandomGenerator rand = new JDKRandomGenerator();
 	public static RandomVectorGenerator randomVector = null;
 	
+	
 	/**
 	 * Set seed and initialize the generator of
 	 * random vectors of length f
@@ -24,6 +25,7 @@ public class GraphGeneration {
 				new UncorrelatedRandomVectorGenerator(
 				f, new GaussianRandomGenerator(rand));
 	}
+	
 	
 	/**
 	 * Generate graph in FeatureMatrix model
