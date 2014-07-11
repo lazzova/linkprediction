@@ -1,4 +1,6 @@
-package teamwork.linkpred_matrix;
+package linkpred_stochastic;
+
+import linkpred_batch.*;
 
 import org.apache.commons.math3.optim.PointValuePair;
 
@@ -17,8 +19,8 @@ public class Main {
 		
 		System.out.println("Graph generation start");            //TODO
 		
-		int g = 20;                                             // number of graphs   50
-		int n = 100;                                            // number of nodes    10000
+		int g = 1;                                             // number of graphs   50
+		int n = 10000;                                            // number of nodes    10000
 		int f = 2;                                              // number of features 2
 		
 		GraphGeneration.initRandom(f);                          // build the graph

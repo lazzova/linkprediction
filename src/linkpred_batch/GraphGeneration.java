@@ -1,4 +1,4 @@
-package teamwork.linkpred_matrix;
+package linkpred_batch;
 
 import java.util.Date;
 
