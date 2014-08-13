@@ -15,9 +15,10 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		
-		System.out.println("Graph generation start");            //TODO
+		System.out.println("BATCH");                            //TODO 
+		System.out.println("Graph generation start");           //TODO
 		
-		int g = 1;                                             // number of graphs   50
+		int g = 10;                                             // number of graphs   50
 		int n = 100;                                            // number of nodes    10000
 		int f = 2;                                              // number of features 2
 		
