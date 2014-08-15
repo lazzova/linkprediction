@@ -108,7 +108,7 @@ public class LinkPrediction {
 		executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
 		
 		int l, d;
-		double delta;                                                                // pl - pd
+		double delta;                                            // pl - pd
 		for (int k = 0; k < g; k++) {      		                                                            
 			for (int i = 0; i < graphs[k].D.size(); i++) {                           // has link
 				for (int j = 0; j < graphs[k].L.size(); j++) {                       // no link

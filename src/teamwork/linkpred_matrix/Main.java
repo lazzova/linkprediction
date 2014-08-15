@@ -53,7 +53,6 @@ public class Main {
 				
 		long end = System.nanoTime();
 		System.out.println("Results in in " + (end-start)/60E9 + " minutes.");
-		
 	}
 }
 	
