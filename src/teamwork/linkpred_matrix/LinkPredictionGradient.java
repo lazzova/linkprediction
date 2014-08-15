@@ -1,4 +1,4 @@
-package linkpred_batch;
+package teamwork.linkpred_matrix;
 
 import org.apache.commons.math3.analysis.MultivariateVectorFunction;
 

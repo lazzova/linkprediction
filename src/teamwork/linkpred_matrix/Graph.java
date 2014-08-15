@@ -1,4 +1,4 @@
-package linkpred_batch;
+package teamwork.linkpred_matrix;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,20 +13,20 @@ import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 import cern.jet.math.tdouble.DoubleFunctions;
 
 
-public class Graph {
+class Graph {
 	
-	public int dim;                                              // number of nodes 
-	public int s;                                                // the node whose links we learn
-	public int f;                                                // number of features
-	public ArrayList<FeatureField> list;                         // the graph
-	public ArrayList<Pair<Integer, Double>> D;                   // the future links set
-	public ArrayList<Pair<Integer, Double>> L;                   // the future no-link set
-	public SparseCCDoubleMatrix2D A;                             // the adjacency matrix
+	int dim;                                                     // number of nodes 
+	int s;                                                       // the node whose links we learn
+	int f;                                                       // number of features
+	ArrayList<FeatureField> list;                                // the graph
+	ArrayList<Pair<Integer, Double>> D;                          // the future links set
+	ArrayList<Pair<Integer, Double>> L;                          // the future no-link set
+	SparseCCDoubleMatrix2D A;                                    // the adjacency matrix
 	
 	// useful
-	public double [] rowSums;                                    // sum of the each row of the adjacency matrix
-    public DoubleMatrix1D p;                                     // pagerank
-    public DoubleMatrix1D [] dp;                                 // pagerank gradient
+	double [] rowSums;                                           // sum of the each row of the adjacency matrix
+    DoubleMatrix1D p;                                            // pagerank
+    DoubleMatrix1D [] dp;                                        // pagerank gradient
 	
 	/**
 	 *  Constructor

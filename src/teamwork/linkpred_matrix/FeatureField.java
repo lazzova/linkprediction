@@ -1,4 +1,4 @@
-package linkpred_batch;
+package teamwork.linkpred_matrix;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
