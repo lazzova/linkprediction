@@ -86,7 +86,7 @@ public class LinkPrediction {
 		
 		int num_threads = Runtime.getRuntime().availableProcessors()+1;             // TODO concurrency
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads,
-				g, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(g));
+				10, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(g));
 
 		for (int k = 0; k < g; k++) { 
 			final Graph tmpg = graphs[k];
