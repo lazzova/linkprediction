@@ -1,4 +1,4 @@
-package teamwork.linkpred_matrix;
+package linkpred_batch;
 
 import java.util.Date;
 
@@ -11,6 +11,7 @@ public class GraphGeneration {
 	
 	public static JDKRandomGenerator rand = new JDKRandomGenerator();
 	public static RandomVectorGenerator randomVector = null;
+	
 	
 	/**
 	 * Set seed and initialize the generator of
@@ -25,15 +26,18 @@ public class GraphGeneration {
 				f, new GaussianRandomGenerator(rand));
 	}
 	
+	
 	/**
 	 * Generate graph in FeatureMatrix model
 	 * Used for testing purpose	
 	 *  
 	 * @param n
+	 * @param f
+	 * @param s
 	 * @return FeatureMatrix
 	 */
-	public static Graph generate (int n) {
-		Graph fm = new Graph(n);
+	public static Graph generate (int n, int f) {
+		Graph fm = new Graph(n, f);
 				
 		int [] degCumulative = new int [n];	                     // array for cumulative degree sums
 		int [] deg = new int [n];                                // array of node degrees
