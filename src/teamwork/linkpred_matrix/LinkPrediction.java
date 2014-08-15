@@ -50,8 +50,7 @@ public class LinkPrediction {
 	 * @return double
 	 */
 	public double WMWloss (double x) {
-		double res = 1.0 / (1+ Math.exp(-x/b));
-		return res;
+		return 1.0 / (1+ Math.exp(-x/b));
 	}
 	
 	
@@ -64,8 +63,7 @@ public class LinkPrediction {
 	 */
 	public double WMWderivative (double x) {
 		double tmp = 1.0 / (1+ Math.exp(x/b));
-		double res = tmp * (1-tmp) / b; 
-		return res;     		
+		return tmp * (1-tmp) / b;     		
 	}
 	
 	
@@ -77,16 +75,15 @@ public class LinkPrediction {
 	 * @throws InterruptedException 
 	 */
 	public void costFunctionAndGradient (DoubleMatrix1D w) throws InterruptedException {			
+		// TODO: Testing (especially with the gradient calculation)
+		
 		this.parameters = w;
 		double regTerm = w.zDotProduct(w);                       // regularization term
 		double errorTerm = 0;                                    // error term
 		
-		for (int i = 0; i < f; i++)                              // clear the gradient
-			gradient[i] = 0;
-		
-		int num_threads = Runtime.getRuntime().availableProcessors()+1;             // TODO concurrency
+		int num_threads = Runtime.getRuntime().availableProcessors()+1;
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads,
-				g, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(g));
+				/*g*/10, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(g));
 
 		for (int k = 0; k < g; k++) { 
 			final Graph tmpg = graphs[k];
@@ -117,7 +114,6 @@ public class LinkPrediction {
 					delta = graphs[k].p.get(l) - graphs[k].p.get(d);
 										
 					errorTerm += WMWloss(delta);
-					
 					for (int idx = 0; idx < f; idx++) {                              // for each element of the gradient vector
 						gradient[idx] += (WMWderivative(delta) *                     // derivative of the error term
 	    			    	    (graphs[k].dp[idx].get(l) - graphs[k].dp[idx].get(d)));					 
@@ -130,8 +126,8 @@ public class LinkPrediction {
 	    
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
-			gradient[idx] += (2 * w.get(idx));                     // derivative of the regularization term				
-	    }
+			gradient[idx] += 2 * w.get(idx);                       // derivative of the regularization term	
+		}
 	}
 	
 	
@@ -143,6 +139,12 @@ public class LinkPrediction {
 	 * @return double
 	 */
 	public double getCost (double []  w) {
+		try {
+			costFunctionAndGradient(new DenseDoubleMatrix1D(w));
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return J;
 	}
 	
@@ -151,10 +153,8 @@ public class LinkPrediction {
 	 * Returns the gradient of the cost function
 	 * 
 	 * @return double []
-	 * @throws InterruptedException 
 	 */
-	public double [] getGradient (double [] w) throws InterruptedException {
-		costFunctionAndGradient(new DenseDoubleMatrix1D(w));
+	public double [] getGradient () {
 		return gradient;
 	}
 	

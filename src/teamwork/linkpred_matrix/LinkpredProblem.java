@@ -26,9 +26,9 @@ public class LinkpredProblem {
 
 	public void optimize () {
 		NonLinearConjugateGradientOptimizer opt = new NonLinearConjugateGradientOptimizer(
-				NonLinearConjugateGradientOptimizer.Formula.FLETCHER_REEVES, 
-				new SimplePointChecker<PointValuePair>(5, 5, 100));                                     // create optimizer using Polak-Ribiere formula, and convergence 
-		                                                                                                // after 10^-6 difference between iterations, or 10^2 cost function, 
+				NonLinearConjugateGradientOptimizer.Formula.POLAK_RIBIERE, 
+				new SimplePointChecker<PointValuePair>(1.0e-5, 1.0e-4, 100));                           // create optimizer using Polak-Ribiere formula, and convergence 
+		                                                                                                // after 10^-5 difference between iterations, or 10^-4 cost function, 
 		                                                                                                // or maximum 100 iterations
 		
 		ObjectiveFunction func = new ObjectiveFunction(new LinkPredictionCost(lp));                     // Selecting our function as objective
@@ -40,13 +40,13 @@ public class LinkpredProblem {
 				lp.getParametersNumber(), new GaussianRandomGenerator(rand));                            // generates random vector of initial parameters
 		
 		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(opt, 100, rvg);                                      // creates multistart optimizer with 500 starting points
+				new MultiStartMultivariateOptimizer(opt, 50, rvg);                                      // creates multistart optimizer with 500 starting points
+		
 		
 		System.out.println("And we are running ...");
 		
 		optimum = optimizer.optimize(
-				func, GoalType.MINIMIZE, grad, new InitialGuess(rvg.nextVector()), new MaxEval(1000));   // runs the optimization    
-		
+				func, GoalType.MINIMIZE, grad, new InitialGuess(rvg.nextVector()), new MaxEval(100));   // runs the optimization    
 	}
 	
 	public PointValuePair getOptimum() {
