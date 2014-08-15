@@ -1,7 +1,6 @@
 package linkpred_stochastic;
 
-import linkpred_batch.Graph;
-import linkpred_batch.GraphGeneration;
+import linkpred_batch.*;
 
 import org.apache.commons.math3.optim.PointValuePair;
 
@@ -18,14 +17,13 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		
-		System.out.println("STOCHASTIC");                        //TODO 
 		System.out.println("Graph generation start");            //TODO
 		
-		int g = 1;                                               // number of graphs   50
-		int n = 10000;                                           // number of nodes    10000
-		int f = 2;                                               // number of features 2
+		int g = 1;                                             // number of graphs   50
+		int n = 10000;                                            // number of nodes    10000
+		int f = 2;                                              // number of features 2
 		
-		GraphGeneration.initRandom(f);                           // build the graph
+		GraphGeneration.initRandom(f);                          // build the graph
 		Graph [] graph = new Graph [g];
 		for (int i = 0; i < g; i++)
 			graph[i] = GraphGeneration.generate(n, f);
@@ -48,7 +46,7 @@ public class Main {
 		long start = System.nanoTime();
 		
 		
-		LinkpredProblemStochastic problem = new LinkpredProblemStochastic(graph, f, alpha, lambda, b);
+		LinkpredProblem problem = new LinkpredProblem(graph, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
 		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
