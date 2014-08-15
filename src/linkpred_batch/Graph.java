@@ -330,6 +330,6 @@ public class Graph {
 			});
 		
 		} while (oldP.zSum() > EPSILON);                         // convergence check
-	}
+	}	
 }
 	
