@@ -1,4 +1,4 @@
-package linkpred_batch;
+package teamwork.linkpred_matrix;
 
 import org.apache.commons.math3.analysis.MultivariateVectorFunction;
 
@@ -11,13 +11,7 @@ public class LinkPredictionGradient implements MultivariateVectorFunction {
 
 	@Override
 	public double[] value(double[] point) throws IllegalArgumentException {
-		double[] grad = null;
-		try {
-			grad = lp.getGradient(point);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		return grad;
+		return lp.getGradient();
 	}
 
 }
