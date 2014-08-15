@@ -17,32 +17,33 @@ public class Main {
 		
 		System.out.println("Graph generation start");            //TODO
 		
-		int g = 50;                                             // number of graphs   50
-		int n = 1000;                                           // number of nodes    10000
-		int f = 2;                                             // number of features 2
+		int g = 50;                                              // number of graphs   50
+		int n = 1000;                                            // number of nodes    10000
+		int f = 2;                                               // number of features 2
 		
 		GraphGeneration.initRandom(f);                                     // build the graph
 		Graph [] graph = new Graph [g];
 		for (int i = 0; i < g; i++)
-			graph[i] = GraphGeneration.generate(n, f);
+			graph[i] = GraphGeneration.generate(n);
 		
 		System.out.println("Graph generation end");				 //TODO
 		
-		int s = 0;                                               // the node whose links we learn, in this case 0 for each graph
+		int [] s = new int [g];                                  // the node whose links we learn, in this case 0 for each graph
 		double alpha = 0.2;                                      // damping factor
-		double b = 1;    //1e-6;                                 // WMW function parameter
+		double b = 1e-3; //1e-6;                                 // WMW function parameter
 		double lambda = 1;                                       // regularization parameter 
 		double [] param = {1, -1};                               // parameters vector
-		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);		
+		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);
+		
 		
 		System.out.println("Building D start");                  //TODO
 		
 		int topRanked = 15;                                      // building D set (linked set)
 		for (int i = 0; i < g; i++)
-			graph[i].buildD(topRanked, parameters, s, alpha);
+			graph[i].buildD(topRanked, parameters, s[i], alpha);
 				
 		long start = System.nanoTime();
-		LinkpredProblem problem = new LinkpredProblem(graph, f, alpha, lambda, b);
+		LinkpredProblem problem = new LinkpredProblem(graph, f, s, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
 		

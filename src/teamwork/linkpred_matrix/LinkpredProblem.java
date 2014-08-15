@@ -20,8 +20,8 @@ public class LinkpredProblem {
 	private LinkPrediction lp;
 	private PointValuePair optimum;
 	
-	public LinkpredProblem (Graph [] graphs, int f, double alpha, double lambda, double b) {
-		this.lp = new LinkPrediction(graphs, f, alpha, lambda, b);
+	public LinkpredProblem (Graph [] graphs, int f, int [] s, double alpha, double lambda, double b) {
+		this.lp = new LinkPrediction(graphs, f, s, alpha, lambda, b);
 	}
 
 	public void optimize () {

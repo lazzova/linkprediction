@@ -10,14 +10,12 @@ import cern.colt.function.tdouble.DoubleDoubleFunction;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
-import cern.jet.math.tdouble.DoubleFunctions;
 
 
 class Graph {
 	
 	int dim;                                                     // number of nodes 
 	int s;                                                       // the node whose links we learn
-	int f;                                                       // number of features
 	ArrayList<FeatureField> list;                                // the graph
 	ArrayList<Pair<Integer, Double>> D;                          // the future links set
 	ArrayList<Pair<Integer, Double>> L;                          // the future no-link set
@@ -25,26 +23,21 @@ class Graph {
 	
 	// useful
 	double [] rowSums;                                           // sum of the each row of the adjacency matrix
-    DoubleMatrix1D p;                                            // pagerank
-    DoubleMatrix1D [] dp;                                        // pagerank gradient
+	
 	
 	/**
 	 *  Constructor
 	 *  
 	 *  @param dim
 	 */
-	public Graph (int n, int f) {
+	public Graph (int n) {
+		this.s = 0;
 		this.dim = n;
-		this.f = f;
 		this.list = new ArrayList<FeatureField>();
 		this.A = new SparseCCDoubleMatrix2D(n, n);
 		this.D = new ArrayList<Pair<Integer, Double>>();
 		this.L = new ArrayList<Pair<Integer, Double>>();
 		this.rowSums = new double [dim];                         // filled in the buildTransitionMatrix method
-		this.p = new DenseDoubleMatrix1D(n);
-		this.dp = new DoubleMatrix1D [f];
-		for (int i = 0; i < f; i++)
-			dp[i] = new DenseDoubleMatrix1D(dim);
 	}
 
 	
@@ -94,7 +87,7 @@ class Graph {
 		
 		// find pageranks
 		buildAdjacencyMatrix(trueParameters);
-		SparseCCDoubleMatrix2D Q = buildTransitionTranspose(s, alpha);
+		SparseCCDoubleMatrix2D Q = buildTransitionMatrix(s, alpha);
 		DoubleMatrix1D rank = pagerank(Q);
 		
 		// sort the ranks in ascending order
@@ -129,7 +122,7 @@ class Graph {
 	* @param alpha
 	* @return SparseCCDoubleMatrix2D
 	*/
-	public SparseCCDoubleMatrix2D buildTransitionTranspose (int s, double alpha) {
+	public SparseCCDoubleMatrix2D buildTransitionMatrix (int s, double alpha) {
 		
 		SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(A.rows(), A.columns());
 		
@@ -206,125 +199,6 @@ class Graph {
 		} while (oldP.zSum() > 1E-6);                    // convergence check
 		
 		return p;
-	}
-	
-	
-	/**
-	 * Calculate partial derivative of the weight function (exponential funcion 
-	 * considered) parameterized by w, with respect to the index-th parameter
-	 * for the given graph
-	 * 
-	 * @param graphIndex
-	 * @param nodeIndex
-	 * @param featureIndex
-	 * @return double
-	 */
-	public double edgeWeightPartialD (int nodeIndex, int row, int column, int featureIndex) {		
-		return A.get(row, column) * list.get(nodeIndex).features.get(featureIndex);
-	}
-	
-	
-	/**
-	 * Returns matrix of partial derivatives of the transition matrix
-	 *  with respect to the featureIndex-th parameter for the given graph 
-     * 
-	 * @param graph
-	 * @param featureIndex
-	 * @return SparseCCDoubleMatrix2D
-	 */
-	public SparseCCDoubleMatrix2D transitionDerivative (int featureIndex, double alpha) {
-				
-		// TODO: Testing
-		SparseCCDoubleMatrix2D dQ = new SparseCCDoubleMatrix2D(dim, dim);
-		
-		// derivative row sums
-		int r, c;
-		double [] dRowSums = new double [dim];
-		for (int i = 0; i < list.size(); i++) {
-			r = list.get(i).row;
-			c = list.get(i).column;
-			dRowSums[r] += edgeWeightPartialD(i, r, c, featureIndex);
-			if (r != c)
-				dRowSums[c] +=edgeWeightPartialD(i, r, c, featureIndex);	
-		}
-		
-		double value;
-		for (int i = 0; i < list.size(); i++) {
-			r = list.get(i).row;
-			c = list.get(i).column;
-			value = (edgeWeightPartialD(i, r, c, featureIndex) * rowSums[r]) -
-					(A.get(r, c) * dRowSums[r]);
-			value *= (1 - alpha);
-			value /= Math.pow(rowSums[r], 2);
-			dQ.set(r, c, value);
-			
-			if (c == r) continue;
-			
-			value = (edgeWeightPartialD(i, c, r, featureIndex) * rowSums[c]) -
-					(A.get(c, r) * dRowSums[c]);
-			value *= (1 - alpha);
-			value /= Math.pow(rowSums[c], 2);
-			dQ.set(c, r, value);
-		}
-				
-		return dQ;
-	}
-	
-	
-	/**
-	 * Calculates pagerank and it's gradient, for given graph index
-	 *  
-	 * @param graph
-	 */
-	public void pageRankAndGradient (DoubleMatrix1D param, double alpha) {
-		buildAdjacencyMatrix(param);
-		SparseCCDoubleMatrix2D Qt = buildTransitionTranspose(s, alpha);
-		
-		double EPSILON = 1e-6;
-		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(dim);        // the value of p in the previous iteration
-						
-		DoubleMatrix1D oldDp = new DenseDoubleMatrix1D(dim);       // the value of dp in the previous iteration
-		                                                           // ...starts with all entries 0 
-		// PAGERANK GRADIENT
-		DoubleMatrix1D tmp = new DenseDoubleMatrix1D(dim);;
-		for (int k = 0; k < f; k++) {                            // for every parameter
-			oldDp.assign(DoubleFunctions.constant(0));
-			p.assign(1.0 / dim);                                 
-			do {
-				oldDp.assign(dp[k]);
-				
-				transitionDerivative(k, alpha).getTranspose().zMult(p, tmp); 
-				Qt.zMult(oldDp, dp[k]);
-				dp[k].assign(tmp, DoubleFunctions.plus);
-				
-				oldDp.assign(dp[k], new DoubleDoubleFunction() {
-					
-					@Override
-					public double apply(double arg0, double arg1) {
-						return Math.abs(arg0-arg1);
-					}
-				});
-				
-				// calculate next iteration page rank
-				Qt.zMult(p.copy(), p);
-			} while (oldDp.zSum() > EPSILON);		
-		}
-		
-		// PAGERANK
-		do {
-			
-			oldP.assign(p);
-			Qt.zMult(oldP, p);
-								
-			oldP.assign(p, new DoubleDoubleFunction() {
-		
-				@Override
-				public double apply(double arg0, double arg1) {
-					return Math.abs(arg0-arg1);
-				}
-			});
-		
-		} while (oldP.zSum() > EPSILON);                         // convergence check
-	}
+	}		
 }
 	
