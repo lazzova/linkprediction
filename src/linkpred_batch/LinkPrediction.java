@@ -112,8 +112,8 @@ public class LinkPrediction {
 		for (int k = 0; k < g; k++) {      		                                                            
 			for (int i = 0; i < graphs[k].D.size(); i++) {                           // has link
 				for (int j = 0; j < graphs[k].L.size(); j++) {                       // no link
-					l = graphs[k].L.get(j).getKey();
-					d = graphs[k].D.get(i).getKey();
+					l = graphs[k].L.get(j);
+					d = graphs[k].D.get(i);
 					delta = graphs[k].p.get(l) - graphs[k].p.get(d);
 										
 					errorTerm += WMWloss(delta);

@@ -19,8 +19,8 @@ public class Graph {
 	public int s;                                                // the node whose links we learn
 	public int f;                                                // number of features
 	public ArrayList<FeatureField> list;                         // the graph
-	public ArrayList<Pair<Integer, Double>> D;                   // the future links set
-	public ArrayList<Pair<Integer, Double>> L;                   // the future no-link set
+	public ArrayList<Integer> D;                   // the future links set
+	public ArrayList<Integer> L;                   // the future no-link set
 	public SparseCCDoubleMatrix2D A;                             // the adjacency matrix
 	
 	// useful
@@ -38,8 +38,8 @@ public class Graph {
 		this.f = f;
 		this.list = new ArrayList<FeatureField>();
 		this.A = new SparseCCDoubleMatrix2D(n, n);
-		this.D = new ArrayList<Pair<Integer, Double>>();
-		this.L = new ArrayList<Pair<Integer, Double>>();
+		this.D = new ArrayList<Integer>();
+		this.L = new ArrayList<Integer>();
 		this.rowSums = new double [dim];                         // filled in the buildTransitionMatrix method
 		this.p = new DenseDoubleMatrix1D(n);
 		this.dp = new DoubleMatrix1D [f];
@@ -102,11 +102,12 @@ public class Graph {
 		DoubleMatrix1D rank = pagerank(Q);
 		
 		// sort the ranks in ascending order
+		ArrayList<Pair<Integer, Double>> idRankPairs = new ArrayList<Pair<Integer, Double>>();
 		for (int i = 0; i < rank.size(); i++) 
 			if (i != s && A.get(s, i) == 0)                      // the node is not s, and has no links to s previously
-				L.add(new Pair<Integer, Double> (i, rank.get(i)));
+				idRankPairs.add(new Pair<Integer, Double> (i, rank.get(i)));
 				
-		Collections.sort(L, new Comparator<Pair<Integer, Double>> () {
+		Collections.sort(idRankPairs, new Comparator<Pair<Integer, Double>> () {
 		
 			@Override
 			public int compare(Pair<Integer, Double> o1,
@@ -116,12 +117,14 @@ public class Graph {
 				return 0;
 			}		
 		});
+		Collections.reverse(idRankPairs);
 		
 		// put the highest ranked in D and remove those from L
-		while (D.size() < topN) {
-			D.add(L.get(L.size()-1));
-			L.remove(L.size()-1);			
-		}		
+		int i = 0;
+		while (i < topN)
+			D.add(idRankPairs.get(i++).getKey());
+		while (i < idRankPairs.size())
+			L.add(idRankPairs.get(i++).getKey());			
 	}
 		
 		
