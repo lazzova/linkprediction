@@ -9,7 +9,7 @@ import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
  *
  */
 public class MatlabOptFunction {
-	private LinkPrediction problem;
+	private LinkPredictionTrainer problem;
 	private double cost;
 	private double [] gradient;
 	
@@ -35,18 +35,16 @@ public class MatlabOptFunction {
 	 */
 	public void initProblem (int g, int n, int f, int s, 
 			double alpha, double b, double lambda, double [] param) {
-		GraphGeneration.initRandom(f);                          // build the graph
-		Graph [] graph = new Graph [g];
-		for (int i = 0; i < g; i++)
-			graph[i] = GraphGeneration.generate(n, f);
-		
+		ArtifitialGraphGenerator.initRandom(f);                          // build the graph
+		Graph [] graph = new Network [g];
+		int topN = 10; 
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);
 		
-		int topRanked = 10;                                      // building D set (linked set)
 		for (int i = 0; i < g; i++)
-			graph[i].buildD(topRanked, parameters, s, alpha);
+			graph[i] = ArtifitialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
+	
 		
-		problem = new LinkPrediction(graph, f, alpha, lambda, b);		
+		problem = new LinkPredictionTrainer(graph, f, alpha, lambda, b);		
 	}
 
 	
@@ -56,13 +54,18 @@ public class MatlabOptFunction {
 	 * @param w
 	 */
 	public void runProblem (double [] w) {
-		try {
+		//try {
 			gradient = problem.getGradient(w);
+		//} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+		//}
+		try {
+			cost = problem.getCost(w);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		cost = problem.getCost(w);
 	}
 	
 	

@@ -4,17 +4,17 @@ import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 
 public class FeatureField {
-	int row;
-	int column;
-	DoubleMatrix1D features;
+	int row;                                 // row index of the matrix field
+	int column;                              // column index of the matrix field
+	DoubleMatrix1D features;                 // the features of the field
 	
 	
 	/**
 	 * Constructor
 	 * 
-	 * @param row
-	 * @param column
-	 * @param features
+	 * @param row: row index of the matrix field
+	 * @param column: column index of the matrix field
+	 * @param features: the features of the field
 	 */
 	public FeatureField(int row, int column, double[] features) {
 		super();
@@ -37,6 +37,4 @@ public class FeatureField {
 		return column == ((FeatureField) obj).column && 
 				row == ((FeatureField) obj).row;
 	}
-	
-
 }
