@@ -35,8 +35,8 @@ public class MatlabOptFunction {
 	 */
 	public void initProblem (int g, int n, int f, int s, 
 			double alpha, double b, double lambda, double [] param) {
-		ArtifitialGraphGenerator.initRandom(f);                          // build the graph
-		Graph [] graph = new Network [g];
+		ArtifitialGraphGenerator.initialize(f);                          // build the graph
+		RandomWalkGraph [] graph = new Network [g];
 		int topN = 10; 
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);
 		
@@ -54,18 +54,13 @@ public class MatlabOptFunction {
 	 * @param w
 	 */
 	public void runProblem (double [] w) {
-		//try {
-			gradient = problem.getGradient(w);
-		//} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
-		//}
 		try {
-			cost = problem.getCost(w);
+			gradient = problem.getGradient(w);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		cost = problem.getCost(w);		
 	}
 	
 	

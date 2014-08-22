@@ -19,8 +19,8 @@ public class Main {
 		System.out.println("Graph generation start");           //TODO
 		
 		// TODO the optimizator throws an exception with 50 graphs, no exception for 20 or less
-		int g = 1;                                             // number of graphs   50
-		int n = 10000;                                          // number of nodes    10000
+		int g = 50;                                             // number of graphs   50
+		int n = 1000;                                           // number of nodes    10000
 		int f = 2;                                              // number of features 2
 		
 		int s = 0;                                               // the node whose links we learn, in this case 0 for each graph
@@ -31,17 +31,16 @@ public class Main {
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);	
 		int topN = 10;
 		
-		ArtifitialGraphGenerator.initRandom(f);                  // build the graph
-		Graph [] graph = new Network [g];
+		ArtifitialGraphGenerator.initialize(f);                  // build the graph
+		RandomWalkGraph [] graphs = new Network [g];
 		for (int i = 0; i < g; i++)
-			graph[i] = ArtifitialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
+			graphs[i] = ArtifitialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
 		
 		System.out.println("Graph generation end");				 //TODO	
 		
-		
 		long start = System.nanoTime();
 				
-		LinkpredProblem problem = new LinkpredProblem(graph, f, alpha, lambda, b);
+		LinkpredProblem problem = new LinkpredProblem(graphs, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
 		

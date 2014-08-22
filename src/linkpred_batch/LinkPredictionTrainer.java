@@ -10,7 +10,7 @@ import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 public class LinkPredictionTrainer {
 	private int g;                                               // number of graphs
 	private int f;                                               // number of features
-	private Pageranker [] pagerankers;                           // pageranker for each graph
+	private RandomWalkGraph [] graphs;                           // pageranker for each graph
 	private double alpha;                                        // damping factor
 	private double lambda;                                       // regularization parameter
 	private double b;                                            // b parameter for the WMW loss function
@@ -18,6 +18,7 @@ public class LinkPredictionTrainer {
 	private double [] gradient;                                  // gradient
 	private DoubleMatrix1D parameters;                           // parameters
 	
+	double [] previousPoint;                                     // TODO
 		
 	
 	/**
@@ -29,17 +30,19 @@ public class LinkPredictionTrainer {
 	 * @param lambda: regularization parameter
 	 * @param b: b parameter for the WMW loss function
 	 */
-	public LinkPredictionTrainer(Graph [] graphs, int f, double alpha, double lambda, double b) {		
+	public LinkPredictionTrainer(RandomWalkGraph [] graphs, int f, double alpha, double lambda, double b) {		
 		this.g = graphs.length;
 		this.f = f;
-		this.pagerankers = new Pageranker [g];
-		for (int i = 0; i < g; i++)
-			pagerankers[i] = new Pageranker(graphs[i]);
+		this.graphs = graphs;
 		this.alpha = alpha;
 		this.lambda = lambda;
 		this.b = b;                                              // needed olnly if WMW loss function is used
 		this.gradient = new double [f];
 		this.J = Double.MAX_VALUE;
+		
+		previousPoint = new double [f];                          // TODO
+		for (int i = 0; i < f; i++)
+			previousPoint[i] = Math.random();
 	}
 	
 	
@@ -89,13 +92,13 @@ public class LinkPredictionTrainer {
 				20, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(g));  // TODO maximut thread pool from g to 20
 
 		for (int k = 0; k < g; k++) { 
-			final Pageranker tmpRanker = pagerankers[k];
+			final RandomWalkGraph graph = graphs[k];
 		    executor.execute(new Runnable() {
 									
 				@Override
 				public void run() {
 					try {
-						tmpRanker.pageRankAndGradient(parameters, alpha);       // for each graph 
+						graph.pageRankAndGradient(parameters, alpha);       // for each graph 
 					}
 		            catch (Exception e) {
 						e.printStackTrace();
@@ -110,17 +113,17 @@ public class LinkPredictionTrainer {
 		int l, d;
 		double delta;                                                                // pl - pd
 		for (int k = 0; k < g; k++) {      		                                                            
-			for (int i = 0; i < pagerankers[k].graph.D.size(); i++) {                           // has link
-				for (int j = 0; j < pagerankers[k].graph.L.size(); j++) {                       // no link
-					l = pagerankers[k].graph.L.get(j);
-					d = pagerankers[k].graph.D.get(i);
-					delta = pagerankers[k].p.get(l) - pagerankers[k].p.get(d);
+			for (int i = 0; i < graphs[k].D.size(); i++) {                           // has link
+				for (int j = 0; j < graphs[k].L.size(); j++) {                       // no link
+					l = graphs[k].L.get(j);
+					d = graphs[k].D.get(i);
+					delta = graphs[k].p.get(l) - graphs[k].p.get(d);
 										
 					errorTerm += WMWloss(delta);
 					
 					for (int idx = 0; idx < f; idx++) {                              // for each element of the gradient vector
 						gradient[idx] += (WMWderivative(delta) *                     // derivative of the error term
-	    			    	    (pagerankers[k].dp[idx].get(l) - pagerankers[k].dp[idx].get(d)));					 
+	    			    	    (graphs[k].dp[idx].get(l) - graphs[k].dp[idx].get(d)));					 
 					}
 				}
 			}			
@@ -130,7 +133,8 @@ public class LinkPredictionTrainer {
 	    
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
-			gradient[idx] += (2 * w.get(idx));                     // derivative of the regularization term				
+			gradient[idx] += (2 * w.get(idx));                     // derivative of the regularization term		
+			gradient[idx] *= 0.0001;                                 // TODO added learning rate
 	    }
 	}
 	
@@ -143,8 +147,7 @@ public class LinkPredictionTrainer {
 	 * @return double
 	 * @throws InterruptedException 
 	 */
-	public double getCost (double []  w) throws InterruptedException {
-		costFunctionAndGradient(new DenseDoubleMatrix1D(w));
+	public double getCost (double []  w)  {
 		return J;
 	}
 	
@@ -155,8 +158,28 @@ public class LinkPredictionTrainer {
 	 * @return double []
 	 * @throws InterruptedException 
 	 */
-	public double [] getGradient (double [] w) {
+	public double [] getGradient (double [] w) throws InterruptedException {
+		boolean newPoint = true;
+		/*for (int i = 0; i < w.length; i++) {
+			w[i] = roundDecimal(w[i], 5);
+			if (!(w[i] > previousPoint[i] || w[i] < previousPoint[i])) {
+				newPoint = false;
+				break;
+			}
+		}*/
+		
+		if (newPoint)
+			costFunctionAndGradient(new DenseDoubleMatrix1D(w));
 		return gradient;
+	}
+	
+	
+	private double roundDecimal (double num, int decimal) {
+		double multiplier = Math.pow(10, decimal);
+		num = num*multiplier;
+		num = Math.round(num);
+		num /= multiplier;
+		return num;
 	}
 	
 	

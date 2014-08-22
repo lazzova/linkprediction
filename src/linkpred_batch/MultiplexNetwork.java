@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
-public class MultiplexNetwork extends Graph {
+public class MultiplexNetwork extends RandomWalkGraph {
 	//public int dim;                                              // number of nodes 
 	//public int s;                                                // the node whose links we learn
 	//public int f;                                                // number of features
@@ -56,7 +56,7 @@ public class MultiplexNetwork extends Graph {
 		for (int i = 0; i < list.size(); i++) {
 			r = list.get(i).row;
 			c = list.get(i).column;
-			temp = Math.exp(param.zDotProduct(list.get(i).features));
+			temp = weightingFunction(param.zDotProduct(list.get(i).features));
 			A.set(r, c, temp);
 			if (r != c)
 				A.set(c, r, temp);
@@ -74,6 +74,36 @@ public class MultiplexNetwork extends Graph {
 				}				
 			}
 		}		
+	}
+
+
+	@Override
+	public SparseCCDoubleMatrix2D buildTransitionTranspose(double alpha) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public SparseCCDoubleMatrix2D transitionDerivativeTranspose(
+			int featureIndex, double alpha) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public double weightingFunction(double x) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+	@Override
+	public double weightingFunctionDerivative(int nodeIndex, int row,
+			int column, int featureIndex) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 	
 

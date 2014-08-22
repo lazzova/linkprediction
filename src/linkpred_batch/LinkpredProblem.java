@@ -20,14 +20,14 @@ public class LinkpredProblem {
 	private LinkPredictionTrainer lp;
 	private PointValuePair optimum;
 	
-	public LinkpredProblem (Graph [] graphs, int f, double alpha, double lambda, double b) {
+	public LinkpredProblem (RandomWalkGraph [] graphs, int f, double alpha, double lambda, double b) {
 		this.lp = new LinkPredictionTrainer(graphs, f, alpha, lambda, b);
 	}
 
 	public void optimize () {
 		NonLinearConjugateGradientOptimizer opt = new NonLinearConjugateGradientOptimizer(
 				NonLinearConjugateGradientOptimizer.Formula.FLETCHER_REEVES, 
-				new SimplePointChecker<PointValuePair>(10e-5, 10e-5, 300));                                     // create optimizer using Polak-Ribiere formula, and convergence 
+				new SimplePointChecker<PointValuePair>(0.005, 0.005, 300));                                     // create optimizer using Polak-Ribiere formula, and convergence 
 		                                                                                                // after 10^-6 difference between iterations, or 10^2 cost function, 
 		                                                                                                // or maximum 100 iterations
 		LinkPredictionCost costFunction = new LinkPredictionCost(lp);
@@ -40,15 +40,20 @@ public class LinkpredProblem {
 				lp.getParametersNumber(), new GaussianRandomGenerator(rand));                            // generates random vector of initial parameters
 		
 		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(opt, 50, rvg);                                       // creates multistart optimizer with 500 starting points
+				new MultiStartMultivariateOptimizer(opt, 5, rvg);                                        // creates multistart optimizer with 500 starting points
 		
 		System.out.println("And we are running ...");
 		
 		optimum = optimizer.optimize(
 				func, GoalType.MINIMIZE, grad, new InitialGuess(rvg.nextVector()), new MaxEval(300));    // runs the optimization    
 		
-		optimum = costFunction.optimum;
 		
+		System.out.println("\n\n");
+		System.out.println("Number of evaluations: " + optimizer.getEvaluations());
+		System.out.println("Max number of evaluations: " + optimizer.getMaxEvaluations());
+		System.out.println("Number of iterations: " + optimizer.getIterations());
+		System.out.println("Max number of iterations: " + optimizer.getMaxIterations());
+			
 	}
 	
 	public PointValuePair getOptimum() {

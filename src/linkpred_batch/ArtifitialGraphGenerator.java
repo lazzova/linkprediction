@@ -11,7 +11,9 @@ import org.apache.commons.math3.random.RandomVectorGenerator;
 import org.apache.commons.math3.random.UncorrelatedRandomVectorGenerator;
 import org.apache.commons.math3.util.Pair;
 
+import cern.colt.function.tdouble.DoubleDoubleFunction;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
 public class ArtifitialGraphGenerator {
@@ -25,7 +27,7 @@ public class ArtifitialGraphGenerator {
 	 *
 	 * @param f: the number of features
 	 */
-	public static void initRandom (int f) {
+	public static void initialize (int f) {
 		rand.setSeed(new Date().getTime());
 		randomVector = 
 				new UncorrelatedRandomVectorGenerator(
@@ -45,7 +47,7 @@ public class ArtifitialGraphGenerator {
 	 * @param alpha: the damping factor used for the pagrank when building the D set 
 	 * @return Graph
 	 */
-	public static Graph generate (int n, int f, int s, int topN, DoubleMatrix1D trueParameters, double alpha) {
+	public static RandomWalkGraph generate (int n, int f, int s, int topN, DoubleMatrix1D trueParameters, double alpha) {
 		int [] degCumulative = new int [n];	                     // array for cumulative degree sums
 		int [] deg = new int [n];                                // array of node degrees
 			
@@ -93,14 +95,14 @@ public class ArtifitialGraphGenerator {
 			}			
 		}	
 		
-		Graph g = new Network();
-		g.dim = n;
+		RandomWalkGraph g = new Network(n, f, s, featureList, new ArrayList<Integer>(), new ArrayList<Integer>());
+		/*g.dim = n;
 		g.f = f;
 		g.s = s;
 		g.list = featureList;
 		g.D = new ArrayList<Integer>();
 		g.L = new ArrayList<Integer> ();
-		g.A = new SparseCCDoubleMatrix2D(n, n);
+		g.A = new SparseCCDoubleMatrix2D(n, n);*/
 		
 		buildDandL(g, topN, trueParameters, alpha);
 		
@@ -120,13 +122,11 @@ public class ArtifitialGraphGenerator {
 	 * @param parameters: the parameters used for building the adjacency matrix
 	 * @param alpha: the damping factor used for the pagrank when building the D set
 	 */
-	public static void buildDandL (Graph graph, int topN, DoubleMatrix1D parameters, double alpha) {
-		Pageranker pageranker = new Pageranker(graph);
-				
+	public static void buildDandL (RandomWalkGraph graph, int topN, DoubleMatrix1D parameters, double alpha) {
 		// find pageranks
 		graph.buildAdjacencyMatrix(parameters);
-		SparseCCDoubleMatrix2D Q = pageranker.buildTransitionTranspose(alpha);
-		DoubleMatrix1D rank = pageranker.pagerank(Q);
+		SparseCCDoubleMatrix2D Q = graph.buildTransitionTranspose(alpha);
+		DoubleMatrix1D rank = pagerank(Q);
 		
 		// sort the ranks in ascending order
 		ArrayList<Pair<Integer, Double>> idRankPairs = new ArrayList<Pair<Integer, Double>>();
@@ -153,4 +153,38 @@ public class ArtifitialGraphGenerator {
 		while (i < idRankPairs.size())
 			graph.L.add(idRankPairs.get(i++).getKey());			
 	}	
+	
+	
+	/**
+	* Calculates the pagerank, given a transition matrix,
+	* using the power method
+	* 
+	* @param Qt: transpose of the transition probability matrix
+	* @return
+	*/
+	public static DoubleMatrix1D pagerank (SparseCCDoubleMatrix2D Qt) {
+		
+		int n = Qt.rows();
+		DoubleMatrix1D p = new DenseDoubleMatrix1D(n);           // current iteration
+		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // previous iteration
+				
+		p.assign(1.0 / n);                                       // pagerank initialization 
+		
+		do {
+		
+			oldP.assign(p);
+			Qt.zMult(oldP, p);
+					
+			oldP.assign(p, new DoubleDoubleFunction() {
+		
+				@Override
+				public double apply(double arg0, double arg1) {
+					return Math.abs(arg0-arg1);
+				}
+			});
+		
+		} while (oldP.zSum() > 1E-6);                    // convergence check
+		
+		return p;
+	}
 }
