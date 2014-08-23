@@ -39,20 +39,20 @@ public class LinkpredProblem {
 		RandomVectorGenerator rvg = new UncorrelatedRandomVectorGenerator(
 				lp.getParametersNumber(), new GaussianRandomGenerator(rand));                            // generates random vector of initial parameters
 		
-		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(opt, 5, rvg);                                        // creates multistart optimizer with 500 starting points
+		//MultiStartMultivariateOptimizer optimizer = 
+			//	new MultiStartMultivariateOptimizer(opt, 5, rvg);                                        // creates multistart optimizer with 500 starting points
 		
 		System.out.println("And we are running ...");
 		
-		optimum = optimizer.optimize(
+		optimum = opt.optimize(
 				func, GoalType.MINIMIZE, grad, new InitialGuess(rvg.nextVector()), new MaxEval(300));    // runs the optimization    
 		
 		
 		System.out.println("\n\n");
-		System.out.println("Number of evaluations: " + optimizer.getEvaluations());
-		System.out.println("Max number of evaluations: " + optimizer.getMaxEvaluations());
-		System.out.println("Number of iterations: " + optimizer.getIterations());
-		System.out.println("Max number of iterations: " + optimizer.getMaxIterations());
+		System.out.println("Number of evaluations: " + opt.getEvaluations());
+		System.out.println("Max number of evaluations: " + opt.getMaxEvaluations());
+		System.out.println("Number of iterations: " + opt.getIterations());
+		System.out.println("Max number of iterations: " + opt.getMaxIterations());
 			
 	}
 	

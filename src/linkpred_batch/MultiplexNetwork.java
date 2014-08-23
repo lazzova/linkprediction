@@ -3,6 +3,7 @@ package linkpred_batch;
 import java.util.ArrayList;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
 public class MultiplexNetwork extends RandomWalkGraph {
@@ -47,7 +48,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		this.A = new SparseCCDoubleMatrix2D(dim, dim);
 	}
 		
-		
+	/*	
 	@Override
 	public void buildAdjacencyMatrix(DoubleMatrix1D param) {
 		// intralayer
@@ -75,8 +76,20 @@ public class MultiplexNetwork extends RandomWalkGraph {
 			}
 		}		
 	}
+	*/
 
-
+	
+	@Override
+	public void buildAdjacencyMatrix(DoubleMatrix1D param) {
+		DoubleMatrix1D [] parameters = new DoubleMatrix1D [graphsNumber];
+		int first = 0;
+		for (int i = 0; i < graphsNumber; i++, first += graphs[i].f) {
+			parameters[i] = param.viewPart(first, graphs[i].f);
+			graphs[i].buildAdjacencyMatrix(parameters[i]);
+		}				
+	}
+	
+	
 	@Override
 	public SparseCCDoubleMatrix2D buildTransitionTranspose(double alpha) {
 		// TODO Auto-generated method stub
@@ -94,8 +107,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 
 	@Override
 	public double weightingFunction(double x) {
-		// TODO Auto-generated method stub
-		return 0;
+		return Math.exp(x);
 	}
 
 
