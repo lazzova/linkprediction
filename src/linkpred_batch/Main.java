@@ -19,7 +19,7 @@ public class Main {
 		System.out.println("Graph generation start");           //TODO
 		
 		// TODO the optimizator throws an exception with 50 graphs, no exception for 20 or less
-		int g = 50;                                             // number of graphs   50
+		int g = 2;                                              // number of graphs   50
 		int n = 1000;                                           // number of nodes    10000
 		int f = 2;                                              // number of features 2
 		
@@ -39,13 +39,33 @@ public class Main {
 		System.out.println("Graph generation end");				 //TODO	
 		
 		long start = System.nanoTime();
-				
+		/*		
 		LinkpredProblem problem = new LinkpredProblem(graphs, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
+		*/
+		int maxIterations = 500;
+		double gradientTreshold = 1e-3;
+		double costThreshold = 4;
+		double [] initialParameters = new double [f];
+		for (int i = 0; i < f; i++)
+			initialParameters[i] = Math.random();
+		
+		GradientDescent gd = new GradientDescent(new LinkPredictionTrainer(graphs, f, alpha, lambda, b), 
+				maxIterations, 
+				gradientTreshold, 
+				costThreshold);
+		PointValuePair optimum = null;
+		try {
+			optimum = gd.optimize(initialParameters);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		long end = System.nanoTime();
 		
+		System.out.println(gd.getStopReason());
 		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
 		        optimum.getPoint()[0] + " " + optimum.getPoint()[1]);
 		

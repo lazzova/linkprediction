@@ -26,6 +26,21 @@ public class FeatureField {
 	
 	/**
 	 * Constructor
+	 * 
+	 * @param row: row index of the matrix field
+	 * @param column: column index of the matrix field
+	 * @param features: the features of the field
+	 */
+	public FeatureField(int row, int column, DoubleMatrix1D features) {
+		super();
+		this.row = row;
+		this.column = column;
+		this.features = features;
+	}
+	
+	
+	/**
+	 * Constructor
 	 */
 	public FeatureField () {}
 	
