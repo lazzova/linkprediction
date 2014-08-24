@@ -124,27 +124,7 @@ public class ArtifitialGraphGenerator {
 	 */
 	public static void buildDandL (RandomWalkGraph graph, int topN, DoubleMatrix1D parameters, double alpha) {
 		// find pageranks
-		graph.buildAdjacencyMatrix(parameters);
-		SparseCCDoubleMatrix2D Q = graph.buildTransitionTranspose(alpha);
-		DoubleMatrix1D rank = pagerank(Q);
-		
-		// sort the ranks in ascending order
-		ArrayList<Pair<Integer, Double>> idRankPairs = new ArrayList<Pair<Integer, Double>>();
-		for (int i = 0; i < rank.size(); i++) 
-			if (i != graph.s && graph.A.get(graph.s, i) == 0)                      // the node is not s, and has no links to s previously
-				idRankPairs.add(new Pair<Integer, Double> (i, rank.get(i)));
-				
-		Collections.sort(idRankPairs, new Comparator<Pair<Integer, Double>> () {
-		
-			@Override
-			public int compare(Pair<Integer, Double> o1,
-					Pair<Integer, Double> o2) {
-				if (o1.getValue() > o2.getValue()) return 1;
-				if (o2.getValue() > o1.getValue()) return -1;
-				return 0;
-			}		
-		});
-		Collections.reverse(idRankPairs);
+		ArrayList<Pair<Integer, Double>> idRankPairs = Ranker.predict(graph, parameters, alpha);
 		
 		// put the highest ranked in D and remove those from L
 		int i = 0;
@@ -152,39 +132,5 @@ public class ArtifitialGraphGenerator {
 			graph.D.add(idRankPairs.get(i++).getKey());
 		while (i < idRankPairs.size())
 			graph.L.add(idRankPairs.get(i++).getKey());			
-	}	
-	
-	
-	/**
-	* Calculates the pagerank, given a transition matrix,
-	* using the power method
-	* 
-	* @param Qt: transpose of the transition probability matrix
-	* @return
-	*/
-	public static DoubleMatrix1D pagerank (SparseCCDoubleMatrix2D Qt) {
-		
-		int n = Qt.rows();
-		DoubleMatrix1D p = new DenseDoubleMatrix1D(n);           // current iteration
-		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // previous iteration
-				
-		p.assign(1.0 / n);                                       // pagerank initialization 
-		
-		do {
-		
-			oldP.assign(p);
-			Qt.zMult(oldP, p);
-					
-			oldP.assign(p, new DoubleDoubleFunction() {
-		
-				@Override
-				public double apply(double arg0, double arg1) {
-					return Math.abs(arg0-arg1);
-				}
-			});
-		
-		} while (oldP.zSum() > 1E-6);                    // convergence check
-		
-		return p;
-	}
+	}		
 }
