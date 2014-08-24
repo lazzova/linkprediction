@@ -27,7 +27,7 @@ public class Network extends RandomWalkGraph {
 
 	
 	/**
-	 * Get the Adjacency matrix of the this using exponential function
+	 * Build the Adjacency matrix of the graph
 	 * 
 	 * @param param: the parameters used for building the adjacency matrix
 	 * @return
