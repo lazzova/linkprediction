@@ -51,19 +51,7 @@ public abstract class RandomWalkGraph {
 	/**
 	 * Constructor
 	 */
-	public RandomWalkGraph () {
-		this.dim = 0;
-		this.s = 0;
-		this.f = 0;
-		this.list = new ArrayList<FeatureField>();
-		this.D = new ArrayList<Integer>();
-		this.L = new ArrayList<Integer>();
-		this.A = null;
-		this.p = new DenseDoubleMatrix1D(this.dim);
-		this.dp = new DoubleMatrix1D [this.f];
-		for (int i = 0; i < this.f; i++)
-			dp[i] = new DenseDoubleMatrix1D(this.dim);
-	};
+	public RandomWalkGraph () {};
 
 
 	/**

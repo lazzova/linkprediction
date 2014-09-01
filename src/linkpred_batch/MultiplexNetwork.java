@@ -3,6 +3,7 @@ package linkpred_batch;
 import java.util.ArrayList;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
 public class MultiplexNetwork extends RandomWalkGraph {
@@ -28,11 +29,12 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		this.graphs = graphs;
 		this.interlayer = interlayer;		
 		this.layerDim = graphs[0].dim;
-		this.rowSums = new double [dim];
-		
+				
 		this.dim = graphsNumber * layerDim;
+		this.rowSums = new double [dim];
 		this.s = graphs[0].s;                                      // s node for the first layer TODO
-		this.f = graphs[0].f;
+		for (int i = 0; i < graphsNumber; i++) 
+			this.f += graphs[i].f;
 		
 		this.list = new ArrayList<FeatureField>();
 		list.addAll(graphs[0].list);
@@ -50,6 +52,10 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		}
 		
 		this.A = new SparseCCDoubleMatrix2D(dim, dim);
+		this.p = new DenseDoubleMatrix1D(this.dim);
+		this.dp = new DoubleMatrix1D [this.f];
+		for (int i = 0; i < this.f; i++)
+			dp[i] = new DenseDoubleMatrix1D(this.dim);
 	}
 		
 	/*	
@@ -108,12 +114,13 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	}
 	
 	
+	//TODO: check this method, likley a bug is present
 	@Override
 	public SparseCCDoubleMatrix2D buildTransitionTranspose(double alpha) {
-		SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(this.A.rows(), this.A.columns());
+		SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(dim, dim);
 		
 		// row sums
-		int g, r, c;                                                 // graph, row, column
+		int r, c;                                                 // graph, row, column
 		for (int i = 0; i < this.dim; rowSums[i++] = 0);
 		for (int i = 0; i < this.list.size(); i++) {
 			r = this.list.get(i).row;
@@ -123,35 +130,50 @@ public class MultiplexNetwork extends RandomWalkGraph {
 				rowSums[c] += this.A.get(c, r);	
 		}
 		
-		// (1-alpha) * A[i][j] / sumElements(A[i])) + 1(j == s) * alpha
+		// (1-alpha-interlayer) * A[i][j] / sumElements(A[i])) + 1(j == s) * alpha
 		// build the transpose of Q 
 		double value;
+		double factors = alpha + interlayer;
 		for (int i = 0; i < this.list.size(); i++) {
 			r = this.list.get(i).row;
 			c = this.list.get(i).column;
 			value = this.A.get(r, c);
-			value *= (1 - alpha);
+			value *= (1 - factors);
 			value /= rowSums[r];
 			Q.set(c, r, value);
 		
 			if (r == c) continue;
 		
 			value = this.A.get(c, r);
-			value *= (1 - alpha);
+			value *= (1 - factors);
 			value /= rowSums[c];
 			Q.set(r, c, value);
 		}
 		
-		for (int i = 0; i < Q.rows(); i++) {
-			value = Q.get(this.s, i);
-			value += alpha;
-			Q.set(this.s, i, value);
+		// add damping factor 
+		for (int i = 0; i < graphsNumber; i++) {
+			for (int k = 0; k < layerDim; k++) {
+					value = Q.get(i * layerDim + this.s, i * layerDim + k);
+					value += alpha;
+					Q.set(i * layerDim + this.s, i * layerDim + k, value);				
+			}
 		}
-		// TODO
+		
+		
+		// add interlayer jumps 
+		for (int i = 0; i < graphsNumber; i++) {
+			for (int j = 0; j < graphsNumber; j++) {
+				if (i == j) continue;
+				for (int k = 0; k < layerDim; k++) 	
+					Q.set(k + j*layerDim, i*layerDim + k, interlayer);				
+			}
+		}
+		
 		return Q;		
 	}
 
 	
+	// TODO: DEBUG
 	public void printMatrix (SparseCCDoubleMatrix2D mat) {
 		for (int i = 0; i < mat.rows(); i++) {
 			for (int j = 0; j < mat.columns(); j++)
@@ -161,12 +183,61 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		System.out.println();
 	}
 	
+	// TODO: DEBUG
+	public void isColumnStochastic (SparseCCDoubleMatrix2D mat) {
+		System.out.println();
+		for (int i = 0; i < mat.columns(); i++) 
+			System.out.printf("%.2f\n", mat.viewColumn(i).zSum());		
+	}
+	
 
+	/**
+	 * Returns matrix of partial derivatives of the transition matrix
+	 *  with respect to the featureIndex-th parameter for the given graph 
+     * 
+	 * @param featureIndex: the index of the parameter with respect to which the derivative is being calculated 
+	 * @param alpha: the damping factor
+	 * @return SparseCCDoubleMatrix2D
+	 */
 	@Override
 	public SparseCCDoubleMatrix2D transitionDerivativeTranspose(
 			int featureIndex, double alpha) {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO
+		SparseCCDoubleMatrix2D dQt = new SparseCCDoubleMatrix2D(this.dim, this.dim);
+		
+		// derivative row sums
+		int r, c;
+		double [] dRowSums = new double [this.dim];
+		for (int i = 0; i < this.list.size(); i++) {
+			r = this.list.get(i).row;
+			c = this.list.get(i).column;
+			dRowSums[r] += weightingFunctionDerivative(i, r, c, featureIndex);
+			if (r != c)
+				dRowSums[c] +=weightingFunctionDerivative(i, c, r, featureIndex);	
+		}
+		
+		double value;
+		for (int i = 0; i < this.list.size(); i++) {
+			r = this.list.get(i).row;
+			c = this.list.get(i).column;
+			value = (weightingFunctionDerivative(i, r, c, featureIndex) * rowSums[r]) -
+					(this.A.get(r, c) * dRowSums[r]);
+			value *= (1 - alpha);
+			value /= Math.pow(rowSums[r], 2);
+			//dQ.set(r, c, value); TODO  Return directly the transpose
+			dQt.set(c, r, value);
+			
+			if (c == r) continue;
+			
+			value = (weightingFunctionDerivative(i, c, r, featureIndex) * rowSums[c]) -
+					(this.A.get(c, r) * dRowSums[c]);
+			value *= (1 - alpha - interlayer); // TODO
+			value /= Math.pow(rowSums[c], 2);
+			//dQ.set(c, r, value);
+			dQt.set(r, c, value);
+		}
+				
+		return dQt;
 	}
 
 
@@ -176,11 +247,20 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	}
 
 
+	/**
+	 * Calculate partial derivative of the weight function (exponential funcion 
+	 * considered) parameterized by w, with respect to the index-th parameter
+	 * for the given graph
+	 * 
+	 * @param nodeIndex: the index of the node in the graph
+	 * @param row: the row index of the adjacency matrix
+	 * @param column: the column index of the adjacency matrix
+	 * @param featureIndex: the index of the parameter with respect to which the derivative is being calculated 
+	 * @return double
+	 */
 	@Override
-	public double weightingFunctionDerivative(int nodeIndex, int row,
-			int column, int featureIndex) {
-		// TODO Auto-generated method stub
-		return 0;
+	public double weightingFunctionDerivative(int nodeIndex, int row, int column, int featureIndex) {
+		return this.A.get(row, column) * this.list.get(nodeIndex).features.get(featureIndex);
 	}
 	
 

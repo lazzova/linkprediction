@@ -20,7 +20,7 @@ public class Main {
 		
 		// TODO the optimizator throws an exception with 50 graphs, no exception for 20 or less
 		int g = 2;                                              // number of graphs   50
-		int n = 1000;                                           // number of nodes    10000
+		int n = 10000;                                          // number of nodes    10000
 		int f = 2;                                              // number of features 2
 		
 		int s = 0;                                               // the node whose links we learn, in this case 0 for each graph

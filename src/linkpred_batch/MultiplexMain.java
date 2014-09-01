@@ -14,8 +14,8 @@ public class MultiplexMain {
 		System.out.println("Graph generation start");           //TODO
 		
 		// TODO the optimizator throws an exception with 50 graphs, no exception for 20 or less
-		int g = 2;                                              // number of graphs   
-		int n = 10;                                           // number of nodes    
+		int g = 1;                                              // number of graphs   
+		int n = 100;                                            // number of nodes    
 		int f1 = 2;                                             // number of features for the first graph
 		int f2 = 3;                                             // numer of features for the second graph
 		
@@ -44,19 +44,23 @@ public class MultiplexMain {
 		MultiplexNetwork multiplex = new MultiplexNetwork(graphs, interlayer);
 		
 		// TODO TEST
-		graphs[0].buildAdjacencyMatrix(parameters1);
-		graphs[1].buildAdjacencyMatrix(parameters2);
-		multiplex.buildAdjacencyMatrix(parameters);
-		multiplex.printMatrix(graphs[0].A);
-		multiplex.printMatrix(graphs[1].A);
-		multiplex.printMatrix(multiplex.A);
+		//graphs[0].buildAdjacencyMatrix(parameters1);
+		//graphs[1].buildAdjacencyMatrix(parameters2);
+		//multiplex.buildAdjacencyMatrix(parameters);
+		//multiplex.printMatrix(graphs[0].buildTransitionTranspose(alpha));
+		//multiplex.printMatrix(graphs[1].buildTransitionTranspose(alpha));
+		//multiplex.printMatrix(multiplex.buildTransitionTranspose(alpha));
+		
+		//multiplex.isColumnStochastic(graphs[0].buildTransitionTranspose(alpha));
+		//multiplex.isColumnStochastic(graphs[1].buildTransitionTranspose(alpha));
+		//multiplex.isColumnStochastic(multiplex.buildTransitionTranspose(alpha));
 		// TEST
 		
 		
 		
 		System.out.println("Graph generation end");			   //TODO	
 		
-		/*
+		
 		// GRADIENT DESCENT OPTIMIZATION START
 		
 		long start = System.nanoTime();
@@ -68,7 +72,8 @@ public class MultiplexMain {
 		for (int i = 0; i < f1 + f2; i++)
 			initialParameters[i] = Math.random();
 		
-		GradientDescent gd = new GradientDescent(new LinkPredictionTrainer(graphs, f1+f2, alpha, lambda, b), 
+		GradientDescent gd = new GradientDescent(new LinkPredictionTrainer(
+				new RandomWalkGraph [] {multiplex}, f1+f2, alpha, lambda, b), 
 				maxIterations, 
 				gradientTreshold, 
 				costThreshold);
@@ -88,7 +93,7 @@ public class MultiplexMain {
 		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
 		        optimum.getPoint()[0] + " " + optimum.getPoint()[1]);
 		System.out.println("Results in in " + (end-start)/60E9 + " minutes.");
-		*/
+		
 
 	}
 
