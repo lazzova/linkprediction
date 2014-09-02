@@ -33,13 +33,13 @@ public class MultiplexMain {
 		DoubleMatrix1D parameters2 = new 
 				DenseDoubleMatrix1D(new double [] {0.5, -2, 1});	
 				
-		int topN = 0;
+		int topN = 5;
 		
 		Network [] graphs = new Network [2];   // build the graph
 		ArtifitialGraphGenerator.initialize(f1);
-		graphs[0] = (Network) ArtifitialGraphGenerator.generate(n, f1, s, topN, parameters1, alpha);
+		graphs[0] = (Network) ArtifitialGraphGenerator.generate(n, f1, s, topN, parameters1, alpha + interlayer);
 		ArtifitialGraphGenerator.initialize(f2);
-		graphs[1] = (Network) ArtifitialGraphGenerator.generate(n, f2, s, topN, parameters2, alpha);
+		graphs[1] = (Network) ArtifitialGraphGenerator.generate(n, f2, s, topN, parameters2, alpha + interlayer);
 		
 		MultiplexNetwork multiplex = new MultiplexNetwork(graphs, interlayer);
 		
@@ -66,8 +66,9 @@ public class MultiplexMain {
 		long start = System.nanoTime();
 		
 		int maxIterations = 500;
-		double gradientTreshold = 1e-3;
-		double costThreshold = 2;
+		int restarts = 50;
+		double gradientTreshold = 1e-4;
+		double costThreshold = 6;
 		double [] initialParameters = new double [f1 + f2];
 		for (int i = 0; i < f1 + f2; i++)
 			initialParameters[i] = Math.random();
@@ -80,7 +81,8 @@ public class MultiplexMain {
 		
 		PointValuePair optimum = null;
 		try {
-			optimum = gd.optimize(initialParameters);
+			//optimum = gd.optimize(initialParameters);
+			optimum = gd.multiStartOptimize(restarts, initialParameters);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -90,9 +92,10 @@ public class MultiplexMain {
 		// GRADIENT DESCENT OPTIMIZATION END
 		
 		System.out.println(gd.getStopReason());
-		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
-		        optimum.getPoint()[0] + " " + optimum.getPoint()[1]);
-		System.out.println("Results in in " + (end-start)/60E9 + " minutes.");
+		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: ");
+		for (int i = 0; i < f1+f2; i++)
+		        System.out.print(optimum.getPoint()[i] + " ");
+		System.out.println("\nResults in in " + (end-start)/60E9 + " minutes.");
 		
 
 	}

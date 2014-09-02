@@ -14,7 +14,7 @@ public class GradientDescent {
 	private double costThreshold;
 	
 	private String stopReason;
-	
+	private PointValuePair opt;
 
 	public GradientDescent(LinkPredictionTrainer lp, int maxIterations, double gradientTreshold, double costThreshold) {
 		this.lp = lp;
@@ -22,6 +22,7 @@ public class GradientDescent {
 		this.gradientTreshold = gradientTreshold;
 		this.costThreshold = costThreshold;
 		this.stopReason = INVALID;
+		this.opt = new PointValuePair(null, Double.MAX_VALUE);
 	}
 
 	public PointValuePair optimize (double [] initialParameters) throws InterruptedException {
@@ -31,19 +32,22 @@ public class GradientDescent {
 		int iteration = 0;
 		
 		while (true) {
+			if (cost < opt.getValue())
+				opt = new PointValuePair(parameters, cost);
+			
 			if (iteration > maxIterations) {
 				stopReason = NUMBER_OF_ITERATIONS_EXCEDEED;
-				return new PointValuePair(parameters, cost);
+				return opt;
 			}
 			
 			if (cost < costThreshold) {
 				stopReason = MINIMAL_COST;
-				return new PointValuePair(parameters, cost);
+				return opt;
 			}
 			
 			if (gradientConverged(gradient)) {
 				stopReason = GRADIENT_CONVERGERNCE;
-				return new PointValuePair(parameters, cost);
+				return opt;
 			}
 			
 			printCurrentIteration(iteration, cost, parameters, gradient);
@@ -53,6 +57,25 @@ public class GradientDescent {
 			iteration++;
 		}
 	}
+	
+	
+	public PointValuePair multiStartOptimize (int restarts, double [] initialParameters) throws InterruptedException {
+		PointValuePair multistartOpt = opt;
+		String multistartStopReason = INVALID;
+		while (--restarts > 0) {
+			System.out.println("\n\n**RESTART**\n\n");
+			this.stopReason = INVALID;
+			this.opt = new PointValuePair(null, Double.MAX_VALUE);
+			this.optimize(initialParameters);
+			if (opt.getValue() < multistartOpt.getValue()) {
+				multistartOpt = opt;
+				multistartStopReason = this.stopReason;
+			}
+		}		
+		this.stopReason = multistartStopReason;
+		return multistartOpt;
+	}
+	
 		
 	private boolean gradientConverged (double [] gradient) {
 		for (int i = 0; i < gradient.length; i++)

@@ -18,7 +18,6 @@ public class LinkPredictionTrainer {
 	private double [] gradient;                                  // gradient
 	private DoubleMatrix1D parameters;                           // parameters
 	
-	double [] previousPoint;                                     // TODO
 		
 	
 	/**
@@ -38,11 +37,7 @@ public class LinkPredictionTrainer {
 		this.lambda = lambda;
 		this.b = b;                                              // needed olnly if WMW loss function is used
 		this.gradient = new double [f];
-		this.J = Double.MAX_VALUE;
-		
-		previousPoint = new double [f];                          // TODO
-		for (int i = 0; i < f; i++)
-			previousPoint[i] = Math.random();
+		this.J = Double.MAX_VALUE;		
 	}
 	
 	
@@ -110,6 +105,9 @@ public class LinkPredictionTrainer {
 		executor.shutdown();
 		executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
 		
+		// TODO: I should find a way to better generate L and D since they are different for
+		// each graph, generating them one by one and than concatenating the list doesn't seem
+		// to work, another option is to look D and L sets separately for all layers within the multiplex
 		int l, d;
 		double delta;                                                                // pl - pd
 		for (int k = 0; k < g; k++) {      		                                                            
@@ -134,7 +132,7 @@ public class LinkPredictionTrainer {
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
 			gradient[idx] += (2 * w.get(idx));                     // derivative of the regularization term		
-			gradient[idx] *= 0.0001;                                 // TODO added learning rate
+			gradient[idx] *= 0.0003;                               // TODO added learning rate
 	    }
 	}
 	
@@ -158,18 +156,9 @@ public class LinkPredictionTrainer {
 	 * @return double []
 	 * @throws InterruptedException 
 	 */
+	// TODO: try to clear everything before calling this one, all saved values from the previous iteration
 	public double [] getGradient (double [] w) throws InterruptedException {
-		boolean newPoint = true;
-		/*for (int i = 0; i < w.length; i++) {
-			w[i] = roundDecimal(w[i], 5);
-			if (!(w[i] > previousPoint[i] || w[i] < previousPoint[i])) {
-				newPoint = false;
-				break;
-			}
-		}*/
-		
-		if (newPoint)
-			costFunctionAndGradient(new DenseDoubleMatrix1D(w));
+		costFunctionAndGradient(new DenseDoubleMatrix1D(w));
 		return gradient;
 	}
 	

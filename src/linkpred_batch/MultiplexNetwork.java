@@ -36,19 +36,36 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		for (int i = 0; i < graphsNumber; i++) 
 			this.f += graphs[i].f;
 		
+		/* TODO
 		this.list = new ArrayList<FeatureField>();
 		list.addAll(graphs[0].list);
 		for (int i = 1; i < graphsNumber; i++) 
 			for (FeatureField f : graphs[i].list) 
 				list.add(new FeatureField(i*layerDim+f.row, i*layerDim+f.column, f.features));		
+		*/	
+		
+		this.list = new ArrayList<FeatureField>();
+		FeatureField tmpF;
+		int startF = 0;
+		for (int i = 0; i < graphsNumber; i++) {
+			for (FeatureField ff : graphs[i].list)  {
+				tmpF = new FeatureField(i*layerDim+ff.row, i*layerDim+ff.column, new double [this.f]);
+				for (int j = 0; j < this.graphs[i].f; j++)
+					tmpF.features.set(j+startF, ff.features.get(j));
+				list.add(tmpF);
+			}
+			startF += this.graphs[i].f;
+		}
 				
 		this.D = new ArrayList<Integer>();
 		this.L = new ArrayList<Integer>();
 		for (int i = 1; i < graphsNumber; i++) {
 			for (Integer nodeIndex : graphs[i].D) 
-				this.D.add(i * layerDim + nodeIndex);
+				if (!D.contains(i * layerDim + nodeIndex))
+					this.D.add(i * layerDim + nodeIndex);
 			for (Integer nodeIndex : graphs[i].L) 
-				this.L.add(i * layerDim + nodeIndex);			
+				if (!L.contains(i * layerDim + nodeIndex) && !D.contains(i * layerDim + nodeIndex))
+					this.L.add(i * layerDim + nodeIndex);			
 		}
 		
 		this.A = new SparseCCDoubleMatrix2D(dim, dim);
@@ -58,35 +75,6 @@ public class MultiplexNetwork extends RandomWalkGraph {
 			dp[i] = new DenseDoubleMatrix1D(this.dim);
 	}
 		
-	/*	
-	@Override
-	public void buildAdjacencyMatrix(DoubleMatrix1D param) {
-		// intralayer
-		double temp;
-		int r, c;
-		for (int i = 0; i < list.size(); i++) {
-			r = list.get(i).row;
-			c = list.get(i).column;
-			temp = weightingFunction(param.zDotProduct(list.get(i).features));
-			A.set(r, c, temp);
-			if (r != c)
-				A.set(c, r, temp);
-		}
-		
-		// interlayer
-		int startI = 0, startJ = 0;
-		for (int i = 0; i < this.interlayer.length; i++) {
-			for (int j = 0; j < this.interlayer[0].length; j++) {
-				if (i != j) {
-					startI = i * this.layerDim;
-					startJ = j * this.layerDim;
-					for (int k = 0; k < this.layerDim; k++)
-						A.set(startI+k, startJ+k, this.interlayer[i][j]);
-				}				
-			}
-		}		
-	}
-	*/
 
 	/**
 	 * Build the Adjacency matrix of the graph
@@ -97,16 +85,19 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	@Override
 	public void buildAdjacencyMatrix(DoubleMatrix1D param) {
 		
+		/* TODO
 		DoubleMatrix1D [] params = new DoubleMatrix1D [graphsNumber];
 		for (int i = 0, start = 0; i < graphsNumber; start += graphs[i++].f)
 			params[i] = param.viewPart(start, graphs[i].f);
+		*/
 		
 		double temp;
 		int r, c;
 		for (int i = 0; i < list.size(); i++) {
 			r = list.get(i).row;
 			c = list.get(i).column;
-			temp = weightingFunction(params[r / layerDim].zDotProduct(list.get(i).features));
+			// temp = weightingFunction(params[r / layerDim].zDotProduct(list.get(i).features)); TODO
+			temp = weightingFunction(param.zDotProduct(list.get(i).features));
 			A.set(r, c, temp);
 			if (r != c)
 				A.set(c, r, temp);
@@ -191,6 +182,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	}
 	
 
+	// TODO: A bug might be present
 	/**
 	 * Returns matrix of partial derivatives of the transition matrix
 	 *  with respect to the featureIndex-th parameter for the given graph 
@@ -211,9 +203,9 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		for (int i = 0; i < this.list.size(); i++) {
 			r = this.list.get(i).row;
 			c = this.list.get(i).column;
-			dRowSums[r] += weightingFunctionDerivative(i, r, c, featureIndex);
+			dRowSums[r] += weightingFunctionDerivative(i, r, c, featureIndex);  // TODO: check for mistakes in feature indices
 			if (r != c)
-				dRowSums[c] +=weightingFunctionDerivative(i, c, r, featureIndex);	
+				dRowSums[c] += weightingFunctionDerivative(i, c, r, featureIndex);	
 		}
 		
 		double value;
@@ -222,7 +214,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 			c = this.list.get(i).column;
 			value = (weightingFunctionDerivative(i, r, c, featureIndex) * rowSums[r]) -
 					(this.A.get(r, c) * dRowSums[r]);
-			value *= (1 - alpha);
+			value *= (1 - alpha - interlayer);
 			value /= Math.pow(rowSums[r], 2);
 			//dQ.set(r, c, value); TODO  Return directly the transpose
 			dQt.set(c, r, value);
