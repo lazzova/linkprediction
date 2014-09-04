@@ -9,17 +9,26 @@ import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 import cern.jet.math.tdouble.DoubleFunctions;
 
 public abstract class RandomWalkGraph {
-	public int dim;                                              // number of nodes 
-	public int s;                                                // the node whose links we learn
-	public int f;                                                // number of features
-	public ArrayList<FeatureField> list;                         // the graph
-	public ArrayList<Integer> D;                                 // the future links set
-	public ArrayList<Integer> L;                                 // the future no-link set
-	public SparseCCDoubleMatrix2D A;                             // the adjacency matrix
+	/**Number of nodes */
+	public int dim;                                              
+	/**The starting node*/
+	public int s;                                         
+	/**Number of features per node*/
+	public int f;                                                
+	/**The graph*/
+	public ArrayList<FeatureField> list;                         
+	/**The future links set*/
+	public ArrayList<Integer> D;     
+	/**The future no-link set*/
+	public ArrayList<Integer> L; 
+	/**the adjacency matrix*/
+	public SparseCCDoubleMatrix2D A;                             
 	
 	// useful
-	public DoubleMatrix1D p;                                     // pagerank
-	public DoubleMatrix1D [] dp;                                 // pagerank gradient
+	/**Pagerank*/
+	public DoubleMatrix1D p;                                     
+	/**Pagerank gradient*/
+	public DoubleMatrix1D [] dp;                                 
 	
 	
 	/**
@@ -82,6 +91,12 @@ public abstract class RandomWalkGraph {
 	public abstract SparseCCDoubleMatrix2D transitionDerivativeTranspose (int featureIndex, double alpha);
 	
 	
+	/**
+	 * Defines the edge-weighting function
+	 * 
+	 * @param x: weighting function argument
+	 * @return double
+	 */
 	public abstract double weightingFunction (double x);
 	
 	
@@ -97,6 +112,17 @@ public abstract class RandomWalkGraph {
 	 * @return double
 	 */
 	public abstract double weightingFunctionDerivative (int nodeIndex, int row, int column, int featureIndex);
+	
+	
+	/**
+	 * Returns true if a link from 'from' node to 'to' node in the graph,
+	 * otherwise returns false
+	 * 
+	 * @param from: link start node
+	 * @param to: link end node
+	 * @return boolean
+	 */
+	public abstract boolean hasLink (int from, int to);
 	
 	
 	/**
@@ -123,7 +149,7 @@ public abstract class RandomWalkGraph {
 			do {
 				oldDp.assign(dp[k]);
 				
-				//transitionDerivative(k, alpha).getTranspose().zMult(p, tmp); TODO
+				//transitionDerivative(k, alpha).getTranspose().zMult(p, tmp); 
 				transitionDerivativeTranspose(k, alpha).zMult(p, tmp);
 				Qt.zMult(oldDp, dp[k]);
 				dp[k].assign(tmp, DoubleFunctions.plus);
@@ -157,4 +183,6 @@ public abstract class RandomWalkGraph {
 		
 		} while (oldP.zSum() > EPSILON);                         // convergence check
 	}	
+	
+	
 }

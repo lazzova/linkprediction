@@ -4,14 +4,28 @@ import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.optim.PointValuePair;
 
 public class LinkPredictionCost implements MultivariateFunction {
-	private LinkPredictionTrainer lp;                         // the same object as in LinkPredictionGradient
-	
+	/**The training object, the same as in LinkPredictionGradient*/
+	private LinkPredictionTrainer lp;                         
+	/**Optimal point and value*/
 	public PointValuePair optimum;
 	
+	
+	/**
+	 * Constructor
+	 * 
+	 * @param lp: the trainer object
+	 */
 	public LinkPredictionCost (LinkPredictionTrainer lp) {
 		this.lp = lp;
 	}
 
+	
+	/**
+	 *  Returns the value of the cost function,
+	 *  given parameters
+	 *  
+	 *  @param point: the parameters
+	 */
 	@Override
 	public double value(double[] point) {
 		double d = lp.getCost(point);

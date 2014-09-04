@@ -1,5 +1,7 @@
 package linkpred_batch;
 
+import java.util.ArrayList;
+
 import org.apache.commons.math3.optim.PointValuePair;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
@@ -15,63 +17,89 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		
-		System.out.println("BATCH");                            //TODO 
-		System.out.println("Graph generation start");           //TODO
+		System.out.println("Graph generation start");           
 		
-		// TODO the optimizator throws an exception with 50 graphs, no exception for 20 or less
-		int g = 2;                                              // number of graphs   50
-		int n = 10000;                                          // number of nodes    10000
-		int f = 2;                                              // number of features 2
+		int g = 2;                                                   // number of graphs   
+		int n = 100;                                                 // number of nodes per graph
+		int f = 2;                                                   // number of features per node
 		
-		int s = 0;                                               // the node whose links we learn, in this case 0 for each graph
-		double alpha = 0.2;                                      // damping factor
-		double b = 1e-6;                                         // WMW function parameter
-		double lambda = 1;                                       // regularization parameter 
-		double [] param = {1, -1};                               // parameters vector
+		int s = 0;                                                   // the starting node
+		double alpha = 0.2;                                          // damping factor
+		double b = 1e-6;                                             // WMW function parameter
+		double lambda = 1;                                           // regularization parameter 
+		double [] param = {0.5, -0.2};                                   // parameters vector
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);	
 		int topN = 10;
 		
-		ArtifitialGraphGenerator.initialize(f);                  // build the graph
+		ArtificialGraphGenerator.initialize(f);                       // build the artificial graph
 		RandomWalkGraph [] graphs = new Network [g];
 		for (int i = 0; i < g; i++)
-			graphs[i] = ArtifitialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
+			graphs[i] = ArtificialGraphGenerator.generate(
+					n, f, s, topN, parameters, alpha);
 		
-		System.out.println("Graph generation end");				 //TODO	
+		System.out.println("Graph generation end");				 
 		
 		long start = System.nanoTime();
-		/*		
+		
+				
 		LinkpredProblem problem = new LinkpredProblem(graphs, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
-		*/
-		int maxIterations = 500;
-		double gradientTreshold = 1e-3;
-		double costThreshold = 4;
+		
+		
+		// GRADIENT DESCENT OPTIMIZATION START
+		/*
+		int maxIterations = 500;                                     // Maximum number of iterations          
+		double gradientTreshold = 1e-3;                              // Gradient convergence threshold  
+		double costThreshold = 4;                                    // Minimal cost
 		double [] initialParameters = new double [f];
 		for (int i = 0; i < f; i++)
 			initialParameters[i] = Math.random();
 		
-		GradientDescent gd = new GradientDescent(new LinkPredictionTrainer(graphs, f, alpha, lambda, b), 
+		GradientDescent gd = new GradientDescent(
+				new LinkPredictionTrainer(graphs, f, alpha, lambda, b), 
 				maxIterations, 
 				gradientTreshold, 
 				costThreshold);
 		PointValuePair optimum = null;
 		try {
-			optimum = gd.optimize(initialParameters);
+			optimum = gd.multiStartOptimize(10, initialParameters);
+			//optimum = gd.optimize(initialParameters);                // do the optimization
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		*/
+		// GRADIENT DESCENT OPTIMIZATION END
 		
 		long end = System.nanoTime();
 		
-		System.out.println(gd.getStopReason());
+		//System.out.println(gd.getStopReason());
 		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: " + 
 		        optimum.getPoint()[0] + " " + optimum.getPoint()[1]);
 		
 						
 		
 		System.out.println("Results in in " + (end-start)/60E9 + " minutes.");
+		
+		
+		// PREDICTIONS
+		ArrayList<Integer> trueLinks = new ArrayList<Integer>();
+		ArrayList<Integer> predictedLinks = new ArrayList<Integer>();
+		double [] trueParameters = param;
+		RandomWalkGraph testGraph = ArtificialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
+		trueLinks = Ranker.predictLinks(
+					testGraph, new DenseDoubleMatrix1D(trueParameters), alpha, topN);
+		predictedLinks = Ranker.predictLinks(testGraph, new DenseDoubleMatrix1D(optimum.getFirst()), alpha, topN);
+				
+		System.out.println("\nTrue links:");
+		for (int i = 0; i < trueLinks.size(); i++)
+		System.out.print(trueLinks.get(i) + " ");
+		System.out.println();
+		
+		System.out.println("\nPredicted links:");
+		for (int i = 0; i < predictedLinks.size(); i++)
+			System.out.print(predictedLinks.get(i) + "(" + predictedLinks.get(i) % n + ") ");
+		System.out.println();
 		
 	}
 }

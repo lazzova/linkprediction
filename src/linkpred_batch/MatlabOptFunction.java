@@ -35,13 +35,13 @@ public class MatlabOptFunction {
 	 */
 	public void initProblem (int g, int n, int f, int s, 
 			double alpha, double b, double lambda, double [] param) {
-		ArtifitialGraphGenerator.initialize(f);                          // build the graph
+		ArtificialGraphGenerator.initialize(f);                          // build the graph
 		RandomWalkGraph [] graph = new Network [g];
 		int topN = 10; 
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);
 		
 		for (int i = 0; i < g; i++)
-			graph[i] = ArtifitialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
+			graph[i] = ArtificialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
 	
 		
 		problem = new LinkPredictionTrainer(graph, f, alpha, lambda, b);		

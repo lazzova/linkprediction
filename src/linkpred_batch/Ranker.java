@@ -14,7 +14,16 @@ import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
 public class Ranker {
 
-	public static ArrayList<Pair<Integer, Double>> predict (RandomWalkGraph graph, DoubleMatrix1D parameters, double alpha) {
+	/**
+	 * Calculates the pagerank and sorts the nodes with respect to it
+	 * 
+	 * @param graph: the graph
+	 * @param parameters: the parameters used by the weighting function for building the adjacency matrix
+	 * @param alpha: damping factor
+	 * @return ArrayList<Pair<Integer, Double>>
+	 */
+	public static ArrayList<Pair<Integer, Double>> rankAndSort (
+			RandomWalkGraph graph, DoubleMatrix1D parameters, double alpha) {
 		graph.buildAdjacencyMatrix(parameters);
 		SparseCCDoubleMatrix2D Qt = graph.buildTransitionTranspose(alpha);
 		DoubleMatrix1D pagerank = pagerank(Qt);
@@ -50,10 +59,10 @@ public class Ranker {
 	public static DoubleMatrix1D pagerank (SparseCCDoubleMatrix2D Qt) {
 		
 		int n = Qt.rows();
-		DoubleMatrix1D p = new DenseDoubleMatrix1D(n);           // current iteration
-		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);        // previous iteration
+		DoubleMatrix1D p = new DenseDoubleMatrix1D(n);              // current iteration
+		DoubleMatrix1D oldP = new DenseDoubleMatrix1D(n);           // previous iteration
 				
-		p.assign(1.0 / n);                                       // pagerank initialization 
+		p.assign(1.0 / n);                                          // pagerank initialization 
 		
 		do {
 		
@@ -68,9 +77,35 @@ public class Ranker {
 				}
 			});
 		
-		} while (oldP.zSum() > 1E-6);                    // convergence check
+		} while (oldP.zSum() > 1E-6);                                // convergence check
 		
 		return p;
+	}
+	
+	
+	/**
+	 * Predicts new links by finding the highest ranked nodes given the learned parameters
+	 * (Used after the training)
+	 * 
+	 * @param graph: the graph
+	 * @param parameters: the parameters used by the weighting function for building the adjacency matrix
+	 * @param alpha: damping factor
+	 * @param linksNumber: the number of links to predict
+	 * @return
+	 */
+	public static ArrayList<Integer> predictLinks (
+			RandomWalkGraph graph, DoubleMatrix1D parameters, double alpha, int linksNumber) {
+		ArrayList<Pair<Integer, Double>> highestRanked = rankAndSort(graph, parameters, alpha);
+		ArrayList<Integer> links = new ArrayList<Integer> ();
+		int count = 0;
+		for (int i = 0; count < linksNumber; i++) {
+			if (!graph.hasLink(graph.s, highestRanked.get(i).getFirst())) {				
+				links.add(highestRanked.get(i).getFirst());
+				count++;
+			}
+		}
+		
+		return links;
 	}
 
 }

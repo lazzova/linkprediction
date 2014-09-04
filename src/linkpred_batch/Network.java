@@ -7,8 +7,10 @@ import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
 public class Network extends RandomWalkGraph {
 	// useful
-	public double [] rowSums;                                    // sum of the each row of the adjacency matrix
+	/**Sum of the each row of the adjacency matrix*/
+	public double [] rowSums;                                    
 		
+	
 	/**
 	 * Constructor
 	 * 
@@ -22,7 +24,7 @@ public class Network extends RandomWalkGraph {
 	public Network (int n, int f, int s, ArrayList<FeatureField> list, 
 			ArrayList<Integer> D, ArrayList<Integer> L) {
 		super(n, s, f, list, D, L);		
-		this.rowSums = new double [this.dim];                         // filled in the buildTransitionMatrix method
+		this.rowSums = new double [this.dim];                                  // filled in the buildTransitionMatrix method
 	}
 
 	
@@ -48,14 +50,16 @@ public class Network extends RandomWalkGraph {
 	
 	
 	/**
-	* Builds the transition matrix for given adjacency matrix
+	* Builds the transpose of the transition matrix for given adjacency matrix
+	* and damping factor
 	*
 	* @param alpha: damping factor
 	* @return SparseCCDoubleMatrix2D
 	*/
 	public SparseCCDoubleMatrix2D buildTransitionTranspose (double alpha) {
 		
-		SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(this.A.rows(), this.A.columns());
+		SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(
+				this.A.rows(), this.A.columns());
 		
 		// row sums
 		int r, c;
@@ -145,6 +149,12 @@ public class Network extends RandomWalkGraph {
 	}
 
 
+	/**
+	 * Defines the edge-weighting function
+	 * 
+	 * @param x: weighting function argument
+	 * @return double
+	 */
 	@Override
 	public double weightingFunction(double x) {
 		return Math.exp(x);
@@ -165,6 +175,20 @@ public class Network extends RandomWalkGraph {
 	@Override
 	public double weightingFunctionDerivative(int nodeIndex, int row, int column, int featureIndex) {
 		return this.A.get(row, column) * this.list.get(nodeIndex).features.get(featureIndex);
+	}
+
+
+	/**
+	 * Returns true if a link from 'from' node to 'to' node in the graph,
+	 * otherwise returns false
+	 * 
+	 * @param from: link start node
+	 * @param to: link end node
+	 * @return boolean
+	 */
+	@Override
+	public boolean hasLink(int from, int to) {
+		return this.A.get(from, to) > 0 || this.A.get(from, to) < 0;
 	}
 }
 	

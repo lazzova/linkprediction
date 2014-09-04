@@ -1,8 +1,6 @@
 package linkpred_batch;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 
 import org.apache.commons.math3.random.GaussianRandomGenerator;
@@ -11,19 +9,19 @@ import org.apache.commons.math3.random.RandomVectorGenerator;
 import org.apache.commons.math3.random.UncorrelatedRandomVectorGenerator;
 import org.apache.commons.math3.util.Pair;
 
-import cern.colt.function.tdouble.DoubleDoubleFunction;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
-import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
-import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
-public class ArtifitialGraphGenerator {
+
+public class ArtificialGraphGenerator {
+	/**Random number generator*/
 	public static JDKRandomGenerator rand = new JDKRandomGenerator();
+	/**Random vector generator*/
 	public static RandomVectorGenerator randomVector = null;
 	
 	
 	/**
 	 * Set seed and initialize the generator of
-	 * random vectors of length f
+	 * random vectors of length f 
 	 *
 	 * @param f: the number of features
 	 */
@@ -36,8 +34,8 @@ public class ArtifitialGraphGenerator {
 	
 	
 	/**
-	 * Generate graph in FeatureMatrix model
-	 * Used for testing purpose	
+	 * Generate artificial graph used for testing purpose as explained in the paper, 
+	 * the graph representation is an ArrayList of FeatureFields 	
 	 *  
 	 * @param n: number of nodes
 	 * @param f: number of features
@@ -45,11 +43,12 @@ public class ArtifitialGraphGenerator {
 	 * @param topN: the top ranked N nodes to be put in the D set
 	 * @param trueParameters: the parameters used for building the adjacency matrix
 	 * @param alpha: the damping factor used for the pagrank when building the D set 
-	 * @return Graph
+	 * @return RandomWalkGraph
 	 */
-	public static RandomWalkGraph generate (int n, int f, int s, int topN, DoubleMatrix1D trueParameters, double alpha) {
-		int [] degCumulative = new int [n];	                     // array for cumulative degree sums
-		int [] deg = new int [n];                                // array of node degrees
+	public static RandomWalkGraph generate (int n, int f, int s, int topN, 
+			DoubleMatrix1D trueParameters, double alpha) {
+		int [] degCumulative = new int [n];	                                        // array for cumulative degree sums
+		int [] deg = new int [n];                                                   // array of node degrees
 			
 		int k;
 		int len;
@@ -57,7 +56,7 @@ public class ArtifitialGraphGenerator {
 		             
 		
 		ArrayList<FeatureField> featureList = new ArrayList<FeatureField>();
-		featureList.add(new FeatureField (0, 1, randomVector.nextVector()));          // connect first three nodes in a triad
+		featureList.add(new FeatureField (0, 1, randomVector.nextVector()));        // connect first three nodes in a triad
 		featureList.add(new FeatureField (1, 2, randomVector.nextVector()));
 		featureList.add(new FeatureField (2, 0, randomVector.nextVector()));
 		deg[0] = 2;
@@ -66,8 +65,8 @@ public class ArtifitialGraphGenerator {
 					
 		FeatureField ff;
 		for (int i = 3; i < n; i++) {
-			for (int j = 0; j < 3; j++) {                        // generate three links
-				if (rand.nextInt(11) < 8) {                      // select destination node randomly
+			for (int j = 0; j < 3; j++) {                                           // generate three links
+				if (rand.nextInt(11) < 8) {                                         // select destination node randomly
 					randNum = rand.nextInt(i);
 					ff = new FeatureField (i, randNum, randomVector.nextVector());
 					if (!featureList.contains(ff))
@@ -76,7 +75,7 @@ public class ArtifitialGraphGenerator {
 					deg[randNum]++;
 				}
 				
-				else {                                           // select destination node proportionally to its degree
+				else {                                                              // select destination node proportionally to its degree
 					degCumulative[0] = deg[0];
 					for (k = 1; k < i; k++)
 						degCumulative[k] = degCumulative[k-1] + deg[k];
@@ -95,16 +94,9 @@ public class ArtifitialGraphGenerator {
 			}			
 		}	
 		
-		RandomWalkGraph g = new Network(n, f, s, featureList, new ArrayList<Integer>(), new ArrayList<Integer>());
-		/*g.dim = n;
-		g.f = f;
-		g.s = s;
-		g.list = featureList;
-		g.D = new ArrayList<Integer>();
-		g.L = new ArrayList<Integer> ();
-		g.A = new SparseCCDoubleMatrix2D(n, n);*/
-		
-		buildDandL(g, topN, trueParameters, alpha);
+		RandomWalkGraph g = new Network(n, f, s, featureList, 
+				new ArrayList<Integer>(), new ArrayList<Integer>());
+		buildDandL(g, topN, trueParameters, alpha);                                 // build D and L set
 		
 		return g;
 	}
@@ -120,17 +112,30 @@ public class ArtifitialGraphGenerator {
 	 * @param L: the L set
 	 * @param topN: the top ranked N nodes to be put in the D set
 	 * @param parameters: the parameters used for building the adjacency matrix
-	 * @param alpha: the damping factor used for the pagrank when building the D set
+	 * @param alpha: the damping factor used for the pagerank when building the D set
 	 */
 	public static void buildDandL (RandomWalkGraph graph, int topN, DoubleMatrix1D parameters, double alpha) {
-		// find pageranks
-		ArrayList<Pair<Integer, Double>> idRankPairs = Ranker.predict(graph, parameters, alpha);
+		ArrayList<Pair<Integer, Double>> idRankPairs = Ranker.rankAndSort(
+				graph, parameters, alpha);                                                // find pageranks
 		
-		// put the highest ranked in D and remove those from L
 		int i = 0;
-		while (i < topN)
-			graph.D.add(idRankPairs.get(i++).getKey());
-		while (i < idRankPairs.size())
-			graph.L.add(idRankPairs.get(i++).getKey());			
-	}		
+		int count = 0;
+		while (count < topN) {                                                            // put the highest ranked in D and the rest in L
+			if (!graph.hasLink(graph.s, idRankPairs.get(i).getFirst()) &&
+					graph.s != idRankPairs.get(i).getFirst()) {				
+				graph.D.add(idRankPairs.get(i).getKey());
+				count++;
+			}
+			i++;
+		}
+		
+		while (i < idRankPairs.size()) {
+			if (!graph.hasLink(graph.s, idRankPairs.get(i).getFirst())&&
+					graph.s != idRankPairs.get(i).getFirst()) 
+				graph.L.add(idRankPairs.get(i).getKey());	
+			i++;
+		}	
+		
+	}
+	
 }

@@ -1,5 +1,7 @@
 package linkpred_batch;
 
+import java.util.ArrayList;
+
 import org.apache.commons.math3.optim.PointValuePair;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
@@ -11,11 +13,10 @@ public class MultiplexMain {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println("Graph generation start");           //TODO
+		System.out.println("Graph generation start");           
 		
-		// TODO the optimizator throws an exception with 50 graphs, no exception for 20 or less
 		int g = 1;                                              // number of graphs   
-		int n = 100;                                            // number of nodes    
+		int n = 100;                                            // number of nodes per graph   
 		int f1 = 2;                                             // number of features for the first graph
 		int f2 = 3;                                             // numer of features for the second graph
 		
@@ -35,40 +36,25 @@ public class MultiplexMain {
 				
 		int topN = 5;
 		
-		Network [] graphs = new Network [2];   // build the graph
-		ArtifitialGraphGenerator.initialize(f1);
-		graphs[0] = (Network) ArtifitialGraphGenerator.generate(n, f1, s, topN, parameters1, alpha + interlayer);
-		ArtifitialGraphGenerator.initialize(f2);
-		graphs[1] = (Network) ArtifitialGraphGenerator.generate(n, f2, s, topN, parameters2, alpha + interlayer);
+		Network [] graphs = new Network [2];                    // build the graph
+		ArtificialGraphGenerator.initialize(f1);
+		graphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s, topN, parameters1, alpha + interlayer);
+		ArtificialGraphGenerator.initialize(f2);
+		graphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s, topN, parameters2, alpha + interlayer);
 		
 		MultiplexNetwork multiplex = new MultiplexNetwork(graphs, interlayer);
 		
-		// TODO TEST
-		//graphs[0].buildAdjacencyMatrix(parameters1);
-		//graphs[1].buildAdjacencyMatrix(parameters2);
-		//multiplex.buildAdjacencyMatrix(parameters);
-		//multiplex.printMatrix(graphs[0].buildTransitionTranspose(alpha));
-		//multiplex.printMatrix(graphs[1].buildTransitionTranspose(alpha));
-		//multiplex.printMatrix(multiplex.buildTransitionTranspose(alpha));
+				
+		System.out.println("Graph generation end");			   
 		
-		//multiplex.isColumnStochastic(graphs[0].buildTransitionTranspose(alpha));
-		//multiplex.isColumnStochastic(graphs[1].buildTransitionTranspose(alpha));
-		//multiplex.isColumnStochastic(multiplex.buildTransitionTranspose(alpha));
-		// TEST
-		
-		
-		
-		System.out.println("Graph generation end");			   //TODO	
-		
+		long start = System.nanoTime();		
 		
 		// GRADIENT DESCENT OPTIMIZATION START
 		
-		long start = System.nanoTime();
-		
-		int maxIterations = 500;
-		int restarts = 50;
-		double gradientTreshold = 1e-4;
-		double costThreshold = 6;
+		int maxIterations = 300;
+		int restarts = 20;
+		double gradientTreshold = 1e-5;
+		double costThreshold = 3;
 		double [] initialParameters = new double [f1 + f2];
 		for (int i = 0; i < f1 + f2; i++)
 			initialParameters[i] = Math.random();
@@ -86,10 +72,17 @@ public class MultiplexMain {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+				
+		// GRADIENT DESCENT OPTIMIZATION END
+		
+		
+		/*
+		LinkpredProblem problem = new LinkpredProblem(new RandomWalkGraph [] {multiplex}, f1+f2, alpha, lambda, b);
+		problem.optimize();
+		PointValuePair optimum = problem.getOptimum();
+		*/
 		
 		long end = System.nanoTime();
-		
-		// GRADIENT DESCENT OPTIMIZATION END
 		
 		System.out.println(gd.getStopReason());
 		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: ");
@@ -97,7 +90,27 @@ public class MultiplexMain {
 		        System.out.print(optimum.getPoint()[i] + " ");
 		System.out.println("\nResults in in " + (end-start)/60E9 + " minutes.");
 		
-
+		
+		// PREDICTIONS
+		ArrayList<Integer> trueLinks = new ArrayList<Integer>();
+		ArrayList<Integer> predictedLinks = new ArrayList<Integer>();
+		double [][] trueParameters = new double [2][];
+		trueParameters[0] = parameters1.toArray();
+		trueParameters[1] = parameters2.toArray();
+		for (int i = 0; i < graphs.length; i++)
+			trueLinks.addAll(Ranker.predictLinks(
+					graphs[i], new DenseDoubleMatrix1D(trueParameters[i]), alpha + interlayer, topN));
+		predictedLinks = Ranker.predictLinks(multiplex, new DenseDoubleMatrix1D(optimum.getFirst()), alpha, topN*graphs.length);
+		
+		System.out.println("\nTrue links:");
+		for (int i = 0; i < trueLinks.size(); i++)
+			System.out.print(trueLinks.get(i) + " ");
+		System.out.println();
+		
+		System.out.println("\nPredicted links:");
+		for (int i = 0; i < predictedLinks.size(); i++)
+			System.out.print(predictedLinks.get(i) + "(" + predictedLinks.get(i) % n + ") ");
+		System.out.println();
 	}
 
 }

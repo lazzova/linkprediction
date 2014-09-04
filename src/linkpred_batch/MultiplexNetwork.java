@@ -254,6 +254,36 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	public double weightingFunctionDerivative(int nodeIndex, int row, int column, int featureIndex) {
 		return this.A.get(row, column) * this.list.get(nodeIndex).features.get(featureIndex);
 	}
+
+
+	/**
+	 * Returns true if a link from 'from' node to 'to' node in the graph,
+	 * otherwise returns false
+	 * 
+	 * @param from: link start node
+	 * @param to: link end node
+	 * @return boolean
+	 */
+	@Override
+	public boolean hasLink(int from, int to) {
+		if (from % layerDim == to % layerDim) 
+			return true;                                                 // same node
+		
+		from = ((to / layerDim) * layerDim) + (from % layerDim);
+		if (A.get(from, to) > 0 || A.get(from, to) < 0)
+			return true;
+		
+		/*
+		from = from % layerDim;
+		for (int i = 0; i < graphsNumber; i++) {
+			if (this.A.get(i * layerDim + from, to) > 0 || 
+					this.A.get(i * layerDim + from, to) < 0)
+				return true;
+		}
+		*/
+		                                                                  // there are no interlayer links in the adjacency matrix
+		return false;
+	}
 	
 
 }
