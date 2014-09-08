@@ -45,7 +45,7 @@ public class ArtificialGraphGenerator {
 	 * @param alpha: the damping factor used for the pagrank when building the D set 
 	 * @return RandomWalkGraph
 	 */
-	public static RandomWalkGraph generate (int n, int f, int s, int topN, 
+	public static RandomWalkGraph generate (int n, int f, int s, 
 			DoubleMatrix1D trueParameters, double alpha) {
 		int [] degCumulative = new int [n];	                                        // array for cumulative degree sums
 		int [] deg = new int [n];                                                   // array of node degrees
@@ -96,8 +96,7 @@ public class ArtificialGraphGenerator {
 		
 		RandomWalkGraph g = new Network(n, f, s, featureList, 
 				new ArrayList<Integer>(), new ArrayList<Integer>());
-		buildDandL(g, topN, trueParameters, alpha);                                 // build D and L set
-		
+				
 		return g;
 	}
 	

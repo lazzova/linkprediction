@@ -40,8 +40,10 @@ public class MatlabOptFunction {
 		int topN = 10; 
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);
 		
-		for (int i = 0; i < g; i++)
-			graph[i] = ArtificialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
+		for (int i = 0; i < g; i++) {
+			graph[i] = ArtificialGraphGenerator.generate(n, f, s, parameters, alpha);
+			ArtificialGraphGenerator.buildDandL(graph[i], topN, parameters, alpha);
+		}
 	
 		
 		problem = new LinkPredictionTrainer(graph, f, alpha, lambda, b);		

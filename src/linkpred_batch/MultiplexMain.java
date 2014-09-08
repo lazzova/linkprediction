@@ -21,7 +21,7 @@ public class MultiplexMain {
 		int f2 = 3;                                             // numer of features for the second graph
 		
 		int s = 0;                                              // the node whose links we learn, in this case 0 for each graph
-		double alpha = 0.1;                                     // damping factor
+		double alpha = 0.0;                                     // damping factor
 		double interlayer = 0.2;                                // interlayer jump coeffiecient
 		double b = 1e-6;                                        // WMW function parameter
 		double lambda = 1;                                      // regularization parameter 
@@ -34,44 +34,55 @@ public class MultiplexMain {
 		DoubleMatrix1D parameters2 = new 
 				DenseDoubleMatrix1D(new double [] {0.5, -2, 1});	
 				
-		int topN = 5;
+		int topN = 5; 
+		
+		// TODO: we need to learn from a multiplex, since while training with real data we assume that there is some
+		//       multiplex graph in the background, so the artifitially created graph must also be muliplex
 		
 		Network [] graphs = new Network [2];                    // build the graph
 		ArtificialGraphGenerator.initialize(f1);
-		graphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s, topN, parameters1, alpha + interlayer);
+		graphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s, parameters1, alpha /*+ interlayer*/);
 		ArtificialGraphGenerator.initialize(f2);
-		graphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s, topN, parameters2, alpha + interlayer);
+		graphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s, parameters2, alpha /*+ interlayer*/);
 		
 		MultiplexNetwork multiplex = new MultiplexNetwork(graphs, interlayer);
+		ArtificialGraphGenerator.buildDandL(multiplex, topN, parameters, alpha);
 		
-				
+		// TODO: debugging
+		//multiplex.buildAdjacencyMatrix(new DenseDoubleMatrix1D(param));
+		//multiplex.printMatrix(multiplex.buildTransitionTranspose(alpha));
+		//multiplex.isColumnStochastic(multiplex.buildTransitionTranspose(alpha));
+		
 		System.out.println("Graph generation end");			   
 		
 		long start = System.nanoTime();		
 		
 		// GRADIENT DESCENT OPTIMIZATION START
 		
-		int maxIterations = 300;
+		int maxIterations = 150;
 		int restarts = 20;
 		double gradientTreshold = 1e-5;
-		double costThreshold = 3;
+		double costThreshold = 5.5;
 		double [] initialParameters = new double [f1 + f2];
 		for (int i = 0; i < f1 + f2; i++)
-			initialParameters[i] = Math.random();
+			initialParameters[i] = Math.random() * 2 - 1;                 // select random value between -1 and 1 instead between 0 and 1   
+		
 		
 		GradientDescent gd = new GradientDescent(new LinkPredictionTrainer(
-				new RandomWalkGraph [] {multiplex}, f1+f2, alpha, lambda, b), 
+				new RandomWalkGraph [] {multiplex}, f1+f2, alpha, lambda, b), // TODO 
 				maxIterations, 
 				gradientTreshold, 
 				costThreshold);
-		
 		PointValuePair optimum = null;
-		try {
-			//optimum = gd.optimize(initialParameters);
-			optimum = gd.multiStartOptimize(restarts, initialParameters);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		
+		//do {				
+			try {
+				//optimum = gd.optimize(param);
+				optimum = gd.multiStartOptimize(restarts);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		//} while (optimum.getValue() >= costThreshold);
 				
 		// GRADIENT DESCENT OPTIMIZATION END
 		
@@ -94,13 +105,14 @@ public class MultiplexMain {
 		// PREDICTIONS
 		ArrayList<Integer> trueLinks = new ArrayList<Integer>();
 		ArrayList<Integer> predictedLinks = new ArrayList<Integer>();
-		double [][] trueParameters = new double [2][];
-		trueParameters[0] = parameters1.toArray();
-		trueParameters[1] = parameters2.toArray();
-		for (int i = 0; i < graphs.length; i++)
-			trueLinks.addAll(Ranker.predictLinks(
-					graphs[i], new DenseDoubleMatrix1D(trueParameters[i]), alpha + interlayer, topN));
-		predictedLinks = Ranker.predictLinks(multiplex, new DenseDoubleMatrix1D(optimum.getFirst()), alpha, topN*graphs.length);
+		//double [][] trueParameters = new double [2][];
+		//trueParameters[0] = parameters1.toArray();
+		//trueParameters[1] = parameters2.toArray();
+		//for (int i = 0; i < graphs.length; i++)
+		//	trueLinks.addAll(Ranker.predictLinks(
+		//			graphs[i], new DenseDoubleMatrix1D(trueParameters[i]), alpha + interlayer, topN));
+		trueLinks = Ranker.predictLinks(multiplex, parameters, alpha, topN);
+		predictedLinks = Ranker.predictLinks(multiplex, new DenseDoubleMatrix1D(optimum.getFirst()), alpha, topN);
 		
 		System.out.println("\nTrue links:");
 		for (int i = 0; i < trueLinks.size(); i++)
@@ -111,6 +123,7 @@ public class MultiplexMain {
 		for (int i = 0; i < predictedLinks.size(); i++)
 			System.out.print(predictedLinks.get(i) + "(" + predictedLinks.get(i) % n + ") ");
 		System.out.println();
+		
 	}
-
+	
 }

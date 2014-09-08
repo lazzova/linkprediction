@@ -130,17 +130,19 @@ public class MultiplexNetwork extends RandomWalkGraph {
 			c = this.list.get(i).column;
 			value = this.A.get(r, c);
 			value *= (1 - factors);
-			value /= rowSums[r];
-			Q.set(c, r, value);
+			//value /= rowSums[r];  TODO
+			//Q.set(c, r, value);
+			Q.set(c, r, value/rowSums[r]);
 		
 			if (r == c) continue;
-		
-			value = this.A.get(c, r);
-			value *= (1 - factors);
-			value /= rowSums[c];
-			Q.set(r, c, value);
+		    
+			//value = this.A.get(c, r);
+			//value *= (1 - factors);
+			//value /= rowSums[c];
+			Q.set(r, c, value/rowSums[c]);
 		}
 		
+		/* TODO
 		// add damping factor 
 		for (int i = 0; i < graphsNumber; i++) {
 			for (int k = 0; k < layerDim; k++) {
@@ -149,7 +151,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 					Q.set(i * layerDim + this.s, i * layerDim + k, value);				
 			}
 		}
-		
+		*/
 		
 		// add interlayer jumps 
 		for (int i = 0; i < graphsNumber; i++) {
@@ -168,7 +170,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	public void printMatrix (SparseCCDoubleMatrix2D mat) {
 		for (int i = 0; i < mat.rows(); i++) {
 			for (int j = 0; j < mat.columns(); j++)
-				System.out.printf("%5.2f ", mat.get(i, j));
+				System.out.printf("%5.4f ", mat.get(i, j));
 			System.out.println();
 		}
 		System.out.println();

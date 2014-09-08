@@ -80,15 +80,17 @@ public class Network extends RandomWalkGraph {
 			c = this.list.get(i).column;
 			value = this.A.get(r, c);
 			value *= (1 - alpha);
-			value /= rowSums[r];
-			Q.set(c, r, value);
+			//value /= rowSums[r];  TODO
+			//Q.set(c, r, value);
+			Q.set(c, r, value/rowSums[r]);
 		
 			if (r == c) continue;
 		
-			value = this.A.get(c, r);
-			value *= (1 - alpha);
-			value /= rowSums[c];
-			Q.set(r, c, value);
+			//value = this.A.get(c, r);
+			//value *= (1 - alpha);
+			//value /= rowSums[c];
+			Q.set(r, c, value/rowSums[c]);
+			
 		}
 		
 		for (int i = 0; i < Q.rows(); i++) {

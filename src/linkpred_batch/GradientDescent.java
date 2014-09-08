@@ -95,9 +95,10 @@ public class GradientDescent {
 	 * @return PointValuePair
 	 * @throws InterruptedException
 	 */
-	public PointValuePair multiStartOptimize (int restarts, double [] initialParameters) throws InterruptedException {
+	public PointValuePair multiStartOptimize (int restarts) throws InterruptedException {
 		PointValuePair multistartOpt = opt;
 		String multistartStopReason = INVALID;
+		double [] initialParameters = new double [lp.getParametersNumber()];
 		while (--restarts > 0) {
 			System.out.println("\n\n**RESTART**\n\n");
 			this.stopReason = INVALID;

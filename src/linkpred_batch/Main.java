@@ -33,23 +33,26 @@ public class Main {
 		
 		ArtificialGraphGenerator.initialize(f);                       // build the artificial graph
 		RandomWalkGraph [] graphs = new Network [g];
-		for (int i = 0; i < g; i++)
+		for (int i = 0; i < g; i++) {
 			graphs[i] = ArtificialGraphGenerator.generate(
-					n, f, s, topN, parameters, alpha);
+					n, f, s, parameters, alpha);
+			ArtificialGraphGenerator.buildDandL(graphs[i], topN, parameters, alpha);  
+		}
 		
 		System.out.println("Graph generation end");				 
 		
 		long start = System.nanoTime();
 		
-				
+		/*		
 		LinkpredProblem problem = new LinkpredProblem(graphs, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
-		
+		*/
 		
 		// GRADIENT DESCENT OPTIMIZATION START
-		/*
-		int maxIterations = 500;                                     // Maximum number of iterations          
+		
+		int maxIterations = 150;                                     // Maximum number of iterations  
+		int restarts = 20;
 		double gradientTreshold = 1e-3;                              // Gradient convergence threshold  
 		double costThreshold = 4;                                    // Minimal cost
 		double [] initialParameters = new double [f];
@@ -63,12 +66,12 @@ public class Main {
 				costThreshold);
 		PointValuePair optimum = null;
 		try {
-			optimum = gd.multiStartOptimize(10, initialParameters);
+			optimum = gd.multiStartOptimize(restarts);
 			//optimum = gd.optimize(initialParameters);                // do the optimization
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		*/
+		
 		// GRADIENT DESCENT OPTIMIZATION END
 		
 		long end = System.nanoTime();
@@ -86,7 +89,7 @@ public class Main {
 		ArrayList<Integer> trueLinks = new ArrayList<Integer>();
 		ArrayList<Integer> predictedLinks = new ArrayList<Integer>();
 		double [] trueParameters = param;
-		RandomWalkGraph testGraph = ArtificialGraphGenerator.generate(n, f, s, topN, parameters, alpha);
+		RandomWalkGraph testGraph = ArtificialGraphGenerator.generate(n, f, s, parameters, alpha);
 		trueLinks = Ranker.predictLinks(
 					testGraph, new DenseDoubleMatrix1D(trueParameters), alpha, topN);
 		predictedLinks = Ranker.predictLinks(testGraph, new DenseDoubleMatrix1D(optimum.getFirst()), alpha, topN);
