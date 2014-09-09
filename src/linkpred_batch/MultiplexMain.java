@@ -56,7 +56,7 @@ public class MultiplexMain {
 		long start = System.nanoTime();		
 		
 		// GRADIENT DESCENT OPTIMIZATION START
-		/*
+		
 		int maxIterations = 500;
 		int restarts = 20;
 		double gradientTreshold = 1e-5;
@@ -67,7 +67,7 @@ public class MultiplexMain {
 		
 		
 		GradientDescent gd = new GradientDescent(new LinkPredictionTrainer(
-				new RandomWalkGraph [] {multiplex}, f1+f2, alpha, lambda, b), // TODO 
+				new RandomWalkGraph [] {multiplex}, f1+f2, alpha, lambda, b, 0.0003), // TODO 
 				maxIterations, 
 				gradientTreshold, 
 				costThreshold);
@@ -78,19 +78,19 @@ public class MultiplexMain {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-        */					
+        					
 		// GRADIENT DESCENT OPTIMIZATION END
 		
 		
-		
+		/*
 		LinkpredProblem problem = new LinkpredProblem(new RandomWalkGraph [] {multiplex}, f1+f2, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
-		
+		*/
 		
 		long end = System.nanoTime();
 		
-		//System.out.println(gd.getStopReason());
+		System.out.println(gd.getStopReason());
 		System.out.println("Function minimum: " + optimum.getValue() + "\nParameters: ");
 		for (int i = 0; i < f1+f2; i++)
 		        System.out.print(optimum.getPoint()[i] + " ");

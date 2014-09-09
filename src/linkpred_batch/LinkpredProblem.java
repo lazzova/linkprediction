@@ -33,7 +33,7 @@ public class LinkpredProblem {
 	 * @param b: the b parameter of the WMW loss function
 	 */
 	public LinkpredProblem (RandomWalkGraph [] graphs, int f, double alpha, double lambda, double b) {
-		this.lp = new LinkPredictionTrainer(graphs, f, alpha, lambda, b);
+		this.lp = new LinkPredictionTrainer(graphs, f, alpha, lambda, b, 0.0003);
 	}
 
 	
@@ -56,7 +56,7 @@ public class LinkpredProblem {
 				lp.getParametersNumber(), new GaussianRandomGenerator(rand));                            // generates random vector of initial parameters
 		
 		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(opt, 10, rvg);                                        // creates multistart optimizer with 20 starting points
+				new MultiStartMultivariateOptimizer(opt, 5, rvg);                                        // creates multistart optimizer with 20 starting points
 		
 		System.out.println("And we are running ...");
 		

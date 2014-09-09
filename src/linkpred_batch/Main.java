@@ -42,13 +42,11 @@ public class Main {
 		System.out.println("Graph generation end");				 
 		
 		long start = System.nanoTime();
-		
-				
+	    
 		LinkpredProblem problem = new LinkpredProblem(graphs, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
-		
-		
+				
 		// GRADIENT DESCENT OPTIMIZATION START
 		/*
 		int maxIterations = 150;                                     // Maximum number of iterations  

@@ -19,7 +19,10 @@ public class LinkPredictionTrainer {
 	/**Regularization parameter*/
 	private double lambda;    
 	/**b parameter for the WMW loss function*/
-	private double b;                                            
+	private double b;
+	/**Learning rate*/
+	private double learningRate;
+	
 	
 	/**Cost*/
 	private double J;                                            
@@ -39,7 +42,8 @@ public class LinkPredictionTrainer {
 	 * @param lambda: regularization parameter
 	 * @param b: b parameter for the WMW loss function
 	 */
-	public LinkPredictionTrainer(RandomWalkGraph [] graphs, int f, double alpha, double lambda, double b) {		
+	public LinkPredictionTrainer(RandomWalkGraph [] graphs, 
+			int f, double alpha, double lambda, double b, double learningRate) {		
 		this.g = graphs.length;
 		this.f = f;
 		this.graphs = graphs;
@@ -48,6 +52,7 @@ public class LinkPredictionTrainer {
 		this.b = b;                                              // needed olnly if WMW loss function is used
 		this.gradient = new double [f];
 		this.J = Double.MAX_VALUE;		
+		this.learningRate = learningRate;
 	}
 	
 	
@@ -139,7 +144,7 @@ public class LinkPredictionTrainer {
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
 			gradient[idx] += (2 * w.get(idx));                                      // derivative of the regularization term		
-			gradient[idx] *= 0.0003;                                                // TODO added learning rate
+			gradient[idx] *= learningRate;                                          // TODO added learning rate
 	    }
 	}
 	

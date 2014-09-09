@@ -33,20 +33,34 @@ public class MatlabOptFunction {
 	 * @param lambda - regularization parameter
 	 * @param param - true parameters
 	 */
-	public void initProblem (int g, int n, int f, int s, 
-			double alpha, double b, double lambda, double [] param) {
-		ArtificialGraphGenerator.initialize(f);                          // build the graph
-		RandomWalkGraph [] graph = new Network [g];
-		int topN = 10; 
-		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);
+	public void initProblem (int g, int n, int [] fs, int s, 
+			double alpha, double b, double lambda, double [] param, 
+			double learningRate, double interlayer, int topN) {
+		int f = 0;
+		for (int i = 0; i < g; i++)
+			f += fs[i];
+				
+		DoubleMatrix1D parameters = new 
+				DenseDoubleMatrix1D(param);	
+		DoubleMatrix1D [] params = new DoubleMatrix1D [g];
 		
+		int start = 0;		
+		for (int i = 0; i < g; start += fs[i], i++)
+			params[i] = parameters.viewPart(start, fs[i]);
+			
+		Network [] graphs = new Network [g];                    // build the graph
 		for (int i = 0; i < g; i++) {
-			graph[i] = ArtificialGraphGenerator.generate(n, f, s, parameters, alpha);
-			ArtificialGraphGenerator.buildDandL(graph[i], topN, parameters, alpha);
+			ArtificialGraphGenerator.initialize(fs[i]);
+			graphs[i] = (Network) ArtificialGraphGenerator.generate(n, fs[i], s, params[i], alpha);
 		}
-	
 		
-		problem = new LinkPredictionTrainer(graph, f, alpha, lambda, b);		
+				
+		MultiplexNetwork multiplex = new MultiplexNetwork(graphs, interlayer);
+		ArtificialGraphGenerator.buildDandL(multiplex, topN, parameters, alpha);
+				
+		System.out.println("Graph generation end");			   
+			
+		problem = new LinkPredictionTrainer(new RandomWalkGraph [] {multiplex}, f, alpha, lambda, b, learningRate);		
 	}
 
 	
