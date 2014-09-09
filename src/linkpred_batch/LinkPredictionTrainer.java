@@ -58,8 +58,7 @@ public class LinkPredictionTrainer {
 	 * @return double
 	 */
 	public double WMWloss (double x) {
-		double res = 1.0 / (1+ Math.exp(-x/b));
-		return res;
+		return 1.0 / (1+ Math.exp(-x/b));		
 	} 
 	
 	
@@ -71,9 +70,8 @@ public class LinkPredictionTrainer {
 	 * @return double
 	 */
 	public double WMWderivative (double x) {
-		double tmp = 1.0 / (1+ Math.exp(x/b));
-		double res = tmp * (1-tmp) / b; 
-		return res;     		
+		double tmp = WMWloss(x);                          // TODO: minus before x was missing
+		return tmp * (1-tmp) / b; 
 	}
 	
 	
@@ -141,7 +139,7 @@ public class LinkPredictionTrainer {
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
 			gradient[idx] += (2 * w.get(idx));                                      // derivative of the regularization term		
-			gradient[idx] *= 0.003;                                                 // TODO added learning rate
+			gradient[idx] *= 0.0009;                                                // TODO added learning rate
 	    }
 	}
 	

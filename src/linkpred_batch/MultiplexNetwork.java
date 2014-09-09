@@ -7,21 +7,23 @@ import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
 public class MultiplexNetwork extends RandomWalkGraph {
-	//public int dim;                                              // number of nodes 
-	//public int s;                                                // the node whose links we learn
-	//public int f;                                                // number of features
-	//public ArrayList<FeatureField> list;                         // the graph
-	//public ArrayList<Integer> D;                                 // the future links set
-	//public ArrayList<Integer> L;                                 // the future no-link set
-	//public SparseCCDoubleMatrix2D A;                             // the adjacency matrix
+	//public int dim;                                                     // number of nodes 
+	//public int s;                                                       // the node whose links we learn
+	//public int f;                                                       // number of features
+	//public ArrayList<FeatureField> list;                                // the graph
+	//public ArrayList<Integer> D;                                        // the future links set
+	//public ArrayList<Integer> L;                                 		  // the future no-link set
+	//public SparseCCDoubleMatrix2D A;                             		  // the adjacency matrix
 
-	public int graphsNumber;                                       // the number of graphs within the multiplex
-	public int layerDim;                                           // dimension of a single layer
+	public int graphsNumber;                                       		  // the number of graphs within the multiplex
+	public int layerDim;                                           		  // dimension of a single layer
 	public Network [] graphs;
-	public double interlayer;                                      // interlayer transition coefficient
+	public double interlayer;                                      		  // interlayer transition coefficient
 	
 	// useful
 	public double [] rowSums; 
+	public SparseCCDoubleMatrix2D Qt;                                     // the transpose of the transition probability matrix
+	
 	
 	public MultiplexNetwork (Network [] graphs, double interlayer) {
 		super();
@@ -32,17 +34,9 @@ public class MultiplexNetwork extends RandomWalkGraph {
 				
 		this.dim = graphsNumber * layerDim;
 		this.rowSums = new double [dim];
-		this.s = graphs[0].s;                                      // s node for the first layer TODO
+		this.s = graphs[0].s;                                             // s node for the first layer TODO
 		for (int i = 0; i < graphsNumber; i++) 
 			this.f += graphs[i].f;
-		
-		/* TODO
-		this.list = new ArrayList<FeatureField>();
-		list.addAll(graphs[0].list);
-		for (int i = 1; i < graphsNumber; i++) 
-			for (FeatureField f : graphs[i].list) 
-				list.add(new FeatureField(i*layerDim+f.row, i*layerDim+f.column, f.features));		
-		*/	
 		
 		this.list = new ArrayList<FeatureField>();
 		FeatureField tmpF;
@@ -73,6 +67,17 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		this.dp = new DoubleMatrix1D [this.f];
 		for (int i = 0; i < this.f; i++)
 			dp[i] = new DenseDoubleMatrix1D(this.dim);
+		
+		this.Qt = new SparseCCDoubleMatrix2D(dim, dim);
+		                                    // preset the interlayer jumps for the transition matrix
+		// add interlayer jumps 
+		for (int i = 0; i < graphsNumber; i++) {
+			for (int j = 0; j < graphsNumber; j++) {
+				if (i == j) continue;
+				for (int k = 0; k < layerDim; k++) 	
+					Qt.set(k + j*layerDim, i*layerDim + k, interlayer);				
+			}
+		}
 	}
 		
 
@@ -84,19 +89,11 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	 */
 	@Override
 	public void buildAdjacencyMatrix(DoubleMatrix1D param) {
-		
-		/* TODO
-		DoubleMatrix1D [] params = new DoubleMatrix1D [graphsNumber];
-		for (int i = 0, start = 0; i < graphsNumber; start += graphs[i++].f)
-			params[i] = param.viewPart(start, graphs[i].f);
-		*/
-		
 		double temp;
 		int r, c;
 		for (int i = 0; i < list.size(); i++) {
 			r = list.get(i).row;
 			c = list.get(i).column;
-			// temp = weightingFunction(params[r / layerDim].zDotProduct(list.get(i).features)); TODO
 			temp = weightingFunction(param.zDotProduct(list.get(i).features));
 			A.set(r, c, temp);
 			if (r != c)
@@ -105,10 +102,10 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	}
 	
 	
-	//TODO: check this method, likley a bug is present
 	@Override
 	public SparseCCDoubleMatrix2D buildTransitionTranspose(double alpha) {
-		SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(dim, dim);
+		//SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(dim, dim);
+		SparseCCDoubleMatrix2D Q = this.Qt;
 		
 		// row sums
 		int r, c;                                                 // graph, row, column
@@ -124,25 +121,18 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		// (1-alpha-interlayer) * A[i][j] / sumElements(A[i])) + 1(j == s) * alpha
 		// build the transpose of Q 
 		double value;
-		double factors = alpha + interlayer;
 		for (int i = 0; i < this.list.size(); i++) {
 			r = this.list.get(i).row;
 			c = this.list.get(i).column;
 			value = this.A.get(r, c);
-			value *= (1 - factors);
-			//value /= rowSums[r];  TODO
-			//Q.set(c, r, value);
+			value *= (1 - alpha - interlayer);                  // TODO: maybe not use alpha at all
 			Q.set(c, r, value/rowSums[r]);
 		
-			if (r == c) continue;
-		    
-			//value = this.A.get(c, r);
-			//value *= (1 - factors);
-			//value /= rowSums[c];
-			Q.set(r, c, value/rowSums[c]);
+			if (r != c)		    
+				Q.set(r, c, value/rowSums[c]);
 		}
 		
-		/* TODO
+		/* We don't use damping factor within the multiplex graph, interlayer jumps instead
 		// add damping factor 
 		for (int i = 0; i < graphsNumber; i++) {
 			for (int k = 0; k < layerDim; k++) {
@@ -153,6 +143,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		}
 		*/
 		
+		/*
 		// add interlayer jumps 
 		for (int i = 0; i < graphsNumber; i++) {
 			for (int j = 0; j < graphsNumber; j++) {
@@ -161,6 +152,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 					Q.set(k + j*layerDim, i*layerDim + k, interlayer);				
 			}
 		}
+		*/
 		
 		return Q;		
 	}
@@ -196,7 +188,6 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	@Override
 	public SparseCCDoubleMatrix2D transitionDerivativeTranspose(
 			int featureIndex, double alpha) {
-		// TODO
 		SparseCCDoubleMatrix2D dQt = new SparseCCDoubleMatrix2D(this.dim, this.dim);
 		
 		// derivative row sums
@@ -225,7 +216,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 			
 			value = (weightingFunctionDerivative(i, c, r, featureIndex) * rowSums[c]) -
 					(this.A.get(c, r) * dRowSums[c]);
-			value *= (1 - alpha - interlayer); // TODO
+			value *= (1 - alpha - interlayer); // TODO maybe alpha should be removed
 			value /= Math.pow(rowSums[c], 2);
 			//dQ.set(c, r, value);
 			dQt.set(r, c, value);
@@ -274,16 +265,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		from = ((to / layerDim) * layerDim) + (from % layerDim);
 		if (A.get(from, to) > 0 || A.get(from, to) < 0)
 			return true;
-		
-		/*
-		from = from % layerDim;
-		for (int i = 0; i < graphsNumber; i++) {
-			if (this.A.get(i * layerDim + from, to) > 0 || 
-					this.A.get(i * layerDim + from, to) < 0)
-				return true;
-		}
-		*/
-		                                                                  // there are no interlayer links in the adjacency matrix
+		                                                                 // there are no interlayer links in the adjacency matrix
 		return false;
 	}
 	
