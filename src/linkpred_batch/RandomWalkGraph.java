@@ -140,6 +140,66 @@ public abstract class RandomWalkGraph {
 						
 		DoubleMatrix1D oldDp = new DenseDoubleMatrix1D(dim);       // the value of dp in the previous iteration
 		                                                           // ...starts with all entries 0 
+		
+		//************************ 1 ****************************************
+		
+		boolean [] dpConverged = new boolean [f];
+		boolean allDpConverged = false;
+		boolean pConverged = false;
+		p.assign(1.0 / dim); 
+		for (int k = 0; k < f; k++)                             // for every parameter
+			dp[k].assign(DoubleFunctions.constant(0));    
+		DoubleMatrix1D tmp = new DenseDoubleMatrix1D(dim);
+		
+		SparseCCDoubleMatrix2D [] tdt = new SparseCCDoubleMatrix2D [f];
+		for (int k = 0; k < f; k++)
+			tdt[k] = transitionDerivativeTranspose(k, alpha);
+		
+		while (!allDpConverged) {
+			allDpConverged = true;
+						
+			for (int k = 0; k < f; k++) {
+				if (dpConverged[k]) continue;
+				
+				oldDp.assign(dp[k]);
+				tdt[k].zMult(p, tmp);
+				Qt.zMult(oldDp, dp[k]);
+				dp[k].assign(tmp, DoubleFunctions.plus);
+				
+				oldDp.assign(dp[k], new DoubleDoubleFunction() {
+					
+					@Override
+					public double apply(double arg0, double arg1) {
+						return Math.abs(arg0-arg1);
+					}
+				});
+				double sumsum = oldDp.zSum();                                  // TODO: there is a bug somewhere in the gradient
+				if (oldDp.zSum() < EPSILON)
+					dpConverged[k] = true;
+				else
+					allDpConverged = false;
+			}
+			
+			if (!pConverged) {
+				oldP.assign(p);
+				Qt.zMult(oldP, p);
+									
+				oldP.assign(p, new DoubleDoubleFunction() {
+			
+					@Override
+					public double apply(double arg0, double arg1) {
+						return Math.abs(arg0-arg1);
+					}
+				});
+				
+				if (oldP.zSum() < EPSILON)
+					pConverged = true;
+			}
+		}
+		
+		
+		//**************************** 2 ********************************
+		/*
 		// PAGERANK GRADIENT
 		DoubleMatrix1D tmp = new DenseDoubleMatrix1D(dim);;
 		for (int k = 0; k < f; k++) {                              // for every parameter
@@ -182,7 +242,6 @@ public abstract class RandomWalkGraph {
 			});
 		
 		} while (oldP.zSum() > EPSILON);                         // convergence check
-	}	
-	
-	
+		*/
+	}		
 }

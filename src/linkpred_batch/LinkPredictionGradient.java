@@ -42,19 +42,7 @@ public class LinkPredictionGradient implements MultivariateVectorFunction {
 			System.out.print(grad[i] + "\t");
 		System.out.println("\n");
 		
-		/*
-		boolean tooSmall = true;
-		for (int i = 0; i < grad.length; i++) {
-			if (grad[i] > 0.00001) {
-				tooSmall = false;
-				break;
-			}
-		}
-		
-			
-		if (tooSmall || lp.getCost(point) < 2) grad = new double[point.length];
-		*/
-		
+				
 		return grad;
 	}
 

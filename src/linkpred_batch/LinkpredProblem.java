@@ -43,7 +43,7 @@ public class LinkpredProblem {
 	public void optimize () {
 		NonLinearConjugateGradientOptimizer opt = new NonLinearConjugateGradientOptimizer(
 				NonLinearConjugateGradientOptimizer.Formula.FLETCHER_REEVES, 
-				new SimplePointChecker<PointValuePair>(1e-4, 1e-4, 300));                               // create optimizer using FLETCHER-REEVES formula, and convergence 
+				new SimplePointChecker<PointValuePair>(1e-5, 1e-5, 300));                               // create optimizer using FLETCHER-REEVES formula, and convergence 
 		                                                                                                // after 10^-4 relative threshold, or 10^4 absolute threshold, 
 		                                                                                                // or maximum 100 iterations
 		LinkPredictionCost costFunction = new LinkPredictionCost(lp);
@@ -56,7 +56,7 @@ public class LinkpredProblem {
 				lp.getParametersNumber(), new GaussianRandomGenerator(rand));                            // generates random vector of initial parameters
 		
 		MultiStartMultivariateOptimizer optimizer = 
-				new MultiStartMultivariateOptimizer(opt, 20, rvg);                                        // creates multistart optimizer with 20 starting points
+				new MultiStartMultivariateOptimizer(opt, 10, rvg);                                        // creates multistart optimizer with 20 starting points
 		
 		System.out.println("And we are running ...");
 		

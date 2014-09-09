@@ -139,7 +139,7 @@ public class LinkPredictionTrainer {
 	    for (int idx = 0; idx < f; idx++) {
 	    	gradient[idx] *= lambda;
 			gradient[idx] += (2 * w.get(idx));                                      // derivative of the regularization term		
-			gradient[idx] *= 0.0009;                                                // TODO added learning rate
+			gradient[idx] *= 0.0003;                                                // TODO added learning rate
 	    }
 	}
 	

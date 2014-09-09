@@ -19,15 +19,15 @@ public class Main {
 		
 		System.out.println("Graph generation start");           
 		
-		int g = 2;                                                   // number of graphs   
-		int n = 100;                                                 // number of nodes per graph
+		int g = 50;                                                  // number of graphs   
+		int n = 1000;                                                // number of nodes per graph
 		int f = 2;                                                   // number of features per node
 		
 		int s = 0;                                                   // the starting node
 		double alpha = 0.2;                                          // damping factor
 		double b = 1e-6;                                             // WMW function parameter
 		double lambda = 1;                                           // regularization parameter 
-		double [] param = {0.5, -0.2};                                   // parameters vector
+		double [] param = {1, -1};                                   // parameters vector
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);	
 		int topN = 10;
 		
@@ -43,14 +43,14 @@ public class Main {
 		
 		long start = System.nanoTime();
 		
-		/*		
+				
 		LinkpredProblem problem = new LinkpredProblem(graphs, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
-		*/
+		
 		
 		// GRADIENT DESCENT OPTIMIZATION START
-		
+		/*
 		int maxIterations = 150;                                     // Maximum number of iterations  
 		int restarts = 20;
 		double gradientTreshold = 1e-3;                              // Gradient convergence threshold  
@@ -71,7 +71,7 @@ public class Main {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+		*/
 		// GRADIENT DESCENT OPTIMIZATION END
 		
 		long end = System.nanoTime();
