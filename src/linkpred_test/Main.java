@@ -1,6 +1,11 @@
-package linkpred_batch;
+package linkpred_test;
 
 import java.util.ArrayList;
+
+import linkpred_batch.ArtificialGraphGenerator;
+import linkpred_batch.Network;
+import linkpred_batch.RandomWalkGraph;
+import linkpred_batch.Ranker;
 
 import org.apache.commons.math3.optim.PointValuePair;
 
@@ -34,8 +39,7 @@ public class Main {
 		ArtificialGraphGenerator.initialize(f);                       // build the artificial graph
 		RandomWalkGraph [] graphs = new Network [g];
 		for (int i = 0; i < g; i++) {
-			graphs[i] = ArtificialGraphGenerator.generate(
-					n, f, s, parameters, alpha);
+			graphs[i] = ArtificialGraphGenerator.generate(n, f, s);
 			ArtificialGraphGenerator.buildDandL(graphs[i], topN, parameters, alpha);  
 		}
 		
@@ -87,7 +91,7 @@ public class Main {
 		ArrayList<Integer> trueLinks = new ArrayList<Integer>();
 		ArrayList<Integer> predictedLinks = new ArrayList<Integer>();
 		double [] trueParameters = param;
-		RandomWalkGraph testGraph = ArtificialGraphGenerator.generate(n, f, s, parameters, alpha);
+		RandomWalkGraph testGraph = ArtificialGraphGenerator.generate(n, f, s);
 		trueLinks = Ranker.predictLinks(
 					testGraph, new DenseDoubleMatrix1D(trueParameters), alpha, topN);
 		predictedLinks = Ranker.predictLinks(testGraph, new DenseDoubleMatrix1D(optimum.getFirst()), alpha, topN);

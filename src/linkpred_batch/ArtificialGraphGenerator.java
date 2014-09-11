@@ -11,7 +11,11 @@ import org.apache.commons.math3.util.Pair;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 
-
+/**
+ * 
+ * Used for generating artificial graphs, for testing purpose
+ *
+ */
 public class ArtificialGraphGenerator {
 	/**Random number generator*/
 	public static JDKRandomGenerator rand = new JDKRandomGenerator();
@@ -45,8 +49,7 @@ public class ArtificialGraphGenerator {
 	 * @param alpha: the damping factor used for the pagrank when building the D set 
 	 * @return RandomWalkGraph
 	 */
-	public static RandomWalkGraph generate (int n, int f, int s, 
-			DoubleMatrix1D trueParameters, double alpha) {
+	public static RandomWalkGraph generate (int n, int f, int s) {
 		int [] degCumulative = new int [n];	                                        // array for cumulative degree sums
 		int [] deg = new int [n];                                                   // array of node degrees
 			

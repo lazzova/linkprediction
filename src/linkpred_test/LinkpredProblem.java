@@ -1,6 +1,9 @@
-package linkpred_batch;
+package linkpred_test;
 
 import java.util.Date;
+
+import linkpred_batch.LinkPredictionTrainer;
+import linkpred_batch.RandomWalkGraph;
 
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.MaxEval;

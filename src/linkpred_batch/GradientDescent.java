@@ -2,6 +2,11 @@ package linkpred_batch;
 
 import org.apache.commons.math3.optim.PointValuePair;
 
+/**
+ * 
+ * Simple gradient descent implementation
+ *
+ */
 public class GradientDescent {
 	/**Stopping reason 1*/
 	private static final String NUMBER_OF_ITERATIONS_EXCEDEED = "Maximum number of iteration excedeed.";
@@ -104,7 +109,7 @@ public class GradientDescent {
 			this.stopReason = INVALID;
 			this.opt = new PointValuePair(null, Double.MAX_VALUE);
 			for (int i = 0; i < initialParameters.length; i++)
-				initialParameters[i] = Math.random() * 2 - 1;  // TODO random within interval [-1,1];
+				initialParameters[i] = Math.random() * 2 - 1;  
 			
 			this.optimize(initialParameters);
 			if (opt.getValue() < multistartOpt.getValue()) {

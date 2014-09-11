@@ -1,4 +1,6 @@
-package linkpred_batch;
+package linkpred_test;
+
+import linkpred_batch.LinkPredictionTrainer;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.optim.PointValuePair;

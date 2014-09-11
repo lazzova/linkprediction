@@ -6,6 +6,11 @@ import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
+/**
+ * 
+ * Multiplex graph implementation
+ *
+ */
 public class MultiplexNetwork extends RandomWalkGraph {
 	//public int dim;                                                     // number of nodes 
 	//public int s;                                                       // the node whose links we learn
@@ -34,7 +39,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 				
 		this.dim = graphsNumber * layerDim;
 		this.rowSums = new double [dim];
-		this.s = graphs[0].s;                                             // s node for the first layer TODO
+		this.s = graphs[0].s;                                             // s node for the first layer 
 		for (int i = 0; i < graphsNumber; i++) 
 			this.f += graphs[i].f;
 		
@@ -105,7 +110,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	@Override
 	public SparseCCDoubleMatrix2D buildTransitionTranspose(double alpha) {
 		//SparseCCDoubleMatrix2D Q = new SparseCCDoubleMatrix2D(dim, dim);
-		SparseCCDoubleMatrix2D Q = this.Qt;
+		SparseCCDoubleMatrix2D Q = (SparseCCDoubleMatrix2D) this.Qt.copy();
 		
 		// row sums
 		int r, c;                                                 // graph, row, column
@@ -125,14 +130,13 @@ public class MultiplexNetwork extends RandomWalkGraph {
 			r = this.list.get(i).row;
 			c = this.list.get(i).column;
 			value = this.A.get(r, c);
-			value *= (1 - alpha - interlayer);                  // TODO: maybe not use alpha at all
+			value *= (1 - (alpha + interlayer));                  
 			Q.set(c, r, value/rowSums[r]);
 		
 			if (r != c)		    
 				Q.set(r, c, value/rowSums[c]);
 		}
 		
-		/* We don't use damping factor within the multiplex graph, interlayer jumps instead
 		// add damping factor 
 		for (int i = 0; i < graphsNumber; i++) {
 			for (int k = 0; k < layerDim; k++) {
@@ -141,8 +145,8 @@ public class MultiplexNetwork extends RandomWalkGraph {
 					Q.set(i * layerDim + this.s, i * layerDim + k, value);				
 			}
 		}
-		*/
 		
+		//printMatrix(Q);
 		/*
 		// add interlayer jumps 
 		for (int i = 0; i < graphsNumber; i++) {
@@ -176,7 +180,6 @@ public class MultiplexNetwork extends RandomWalkGraph {
 	}
 	
 
-	// TODO: A bug might be present
 	/**
 	 * Returns matrix of partial derivatives of the transition matrix
 	 *  with respect to the featureIndex-th parameter for the given graph 
@@ -196,7 +199,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		for (int i = 0; i < this.list.size(); i++) {
 			r = this.list.get(i).row;
 			c = this.list.get(i).column;
-			dRowSums[r] += weightingFunctionDerivative(i, r, c, featureIndex);  // TODO: check for mistakes in feature indices
+			dRowSums[r] += weightingFunctionDerivative(i, r, c, featureIndex);  
 			if (r != c)
 				dRowSums[c] += weightingFunctionDerivative(i, c, r, featureIndex);	
 		}
@@ -209,14 +212,14 @@ public class MultiplexNetwork extends RandomWalkGraph {
 					(this.A.get(r, c) * dRowSums[r]);
 			value *= (1 - alpha - interlayer);
 			value /= Math.pow(rowSums[r], 2);
-			//dQ.set(r, c, value); TODO  Return directly the transpose
+			//dQ.set(r, c, value); 
 			dQt.set(c, r, value);
 			
 			if (c == r) continue;
 			
 			value = (weightingFunctionDerivative(i, c, r, featureIndex) * rowSums[c]) -
 					(this.A.get(c, r) * dRowSums[c]);
-			value *= (1 - alpha - interlayer); // TODO maybe alpha should be removed
+			value *= (1 - alpha - interlayer); 
 			value /= Math.pow(rowSums[c], 2);
 			//dQ.set(c, r, value);
 			dQt.set(r, c, value);

@@ -5,6 +5,11 @@ import java.util.ArrayList;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
+/**
+ * 
+ * Graph implementation
+ *
+ */
 public class Network extends RandomWalkGraph {
 	// useful
 	/**Sum of the each row of the adjacency matrix*/
@@ -80,7 +85,7 @@ public class Network extends RandomWalkGraph {
 			c = this.list.get(i).column;
 			value = this.A.get(r, c);
 			value *= (1 - alpha);
-			//value /= rowSums[r];  TODO
+			//value /= rowSums[r];  
 			//Q.set(c, r, value);
 			Q.set(c, r, value/rowSums[r]);
 		
@@ -134,7 +139,7 @@ public class Network extends RandomWalkGraph {
 					(this.A.get(r, c) * dRowSums[r]);
 			value *= (1 - alpha);
 			value /= Math.pow(rowSums[r], 2);
-			//dQ.set(r, c, value); TODO  Return directly the transpose
+			//dQ.set(r, c, value); 
 			dQt.set(c, r, value);
 			
 			if (c == r) continue;

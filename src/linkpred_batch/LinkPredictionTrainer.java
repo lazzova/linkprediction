@@ -7,6 +7,11 @@ import java.util.concurrent.TimeUnit;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 
+/**
+ * 
+ * The trainer class that computes cost and gradient
+ *
+ */
 public class LinkPredictionTrainer {
 	/**Number of graphs*/
 	private int g;                                              
@@ -149,6 +154,16 @@ public class LinkPredictionTrainer {
 	}
 	
 	
+	public void setB(double b) {
+		this.b = b;
+	}
+
+
+	public void setLearningRate(double learningRate) {
+		this.learningRate = learningRate;
+	}
+
+
 	/**
 	 * Returns cost function value
 	 * 

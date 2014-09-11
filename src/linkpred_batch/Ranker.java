@@ -11,7 +11,11 @@ import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 
-
+/**
+ * 
+ * Class used for calculating and sorting pageranks
+ *
+ */
 public class Ranker {
 
 	/**
@@ -54,7 +58,7 @@ public class Ranker {
 	* using the power method
 	* 
 	* @param Qt: transpose of the transition probability matrix
-	* @return
+	* @return DoubleMatrix1D
 	*/
 	public static DoubleMatrix1D pagerank (SparseCCDoubleMatrix2D Qt) {
 		
@@ -91,7 +95,7 @@ public class Ranker {
 	 * @param parameters: the parameters used by the weighting function for building the adjacency matrix
 	 * @param alpha: damping factor
 	 * @param linksNumber: the number of links to predict
-	 * @return
+	 * @return ArrayList<Integer> 
 	 */
 	public static ArrayList<Integer> predictLinks (
 			RandomWalkGraph graph, DoubleMatrix1D parameters, double alpha, int linksNumber) {

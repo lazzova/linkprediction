@@ -8,6 +8,11 @@ import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.SparseCCDoubleMatrix2D;
 import cern.jet.math.tdouble.DoubleFunctions;
 
+/**
+ * 
+ * Abstract class for graph implementation
+ *
+ */
 public abstract class RandomWalkGraph {
 	/**Number of nodes */
 	public int dim;                                              
@@ -34,12 +39,12 @@ public abstract class RandomWalkGraph {
 	/**
 	 * Constructor
 	 * 
-	 * @param dim
-	 * @param s
-	 * @param f
-	 * @param list
-	 * @param D
-	 * @param L
+	 * @param dim: number of nodes
+	 * @param s: the starting node
+	 * @param f: the number of features
+	 * @param list: the graph as list of FeatureFields
+	 * @param D: the future-links set
+	 * @param L: the no-links set
 	 */
 	public RandomWalkGraph(int dim, int s, int f, ArrayList<FeatureField> list,
 			ArrayList<Integer> D, ArrayList<Integer> L) {
@@ -173,7 +178,7 @@ public abstract class RandomWalkGraph {
 						return Math.abs(arg0-arg1);
 					}
 				});
-				double sumsum = oldDp.zSum();                                  // TODO: there is a bug somewhere in the gradient
+				
 				if (oldDp.zSum() < EPSILON)
 					dpConverged[k] = true;
 				else

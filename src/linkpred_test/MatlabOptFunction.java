@@ -1,5 +1,10 @@
-package linkpred_batch;
+package linkpred_test;
 
+import linkpred_batch.ArtificialGraphGenerator;
+import linkpred_batch.LinkPredictionTrainer;
+import linkpred_batch.MultiplexNetwork;
+import linkpred_batch.Network;
+import linkpred_batch.RandomWalkGraph;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 
@@ -51,7 +56,7 @@ public class MatlabOptFunction {
 		Network [] graphs = new Network [g];                    // build the graph
 		for (int i = 0; i < g; i++) {
 			ArtificialGraphGenerator.initialize(fs[i]);
-			graphs[i] = (Network) ArtificialGraphGenerator.generate(n, fs[i], s, params[i], alpha);
+			graphs[i] = (Network) ArtificialGraphGenerator.generate(n, fs[i], s);
 		}
 		
 				

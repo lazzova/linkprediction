@@ -1,6 +1,14 @@
-package linkpred_batch;
+package linkpred_test;
 
 import java.util.ArrayList;
+
+import linkpred_batch.ArtificialGraphGenerator;
+import linkpred_batch.GradientDescent;
+import linkpred_batch.LinkPredictionTrainer;
+import linkpred_batch.MultiplexNetwork;
+import linkpred_batch.Network;
+import linkpred_batch.RandomWalkGraph;
+import linkpred_batch.Ranker;
 
 import org.apache.commons.math3.optim.PointValuePair;
 
@@ -39,9 +47,9 @@ public class MultiplexMain {
 		
 		Network [] graphs = new Network [2];                    // build the graph
 		ArtificialGraphGenerator.initialize(f1);
-		graphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s, parameters1, alpha);
+		graphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s);
 		ArtificialGraphGenerator.initialize(f2);
-		graphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s, parameters2, alpha);
+		graphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s);
 		
 		MultiplexNetwork multiplex = new MultiplexNetwork(graphs, interlayer);
 		ArtificialGraphGenerator.buildDandL(multiplex, topN, parameters, alpha);
@@ -104,9 +112,9 @@ public class MultiplexMain {
 		
 		Network [] testGraphs = new Network [2];                    // build the graph
 		ArtificialGraphGenerator.initialize(f1);
-		testGraphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s, parameters1, alpha);
+		testGraphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s);
 		ArtificialGraphGenerator.initialize(f2);
-		testGraphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s, parameters2, alpha);
+		testGraphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s);
 		
 		MultiplexNetwork testMultiplex = new MultiplexNetwork(graphs, interlayer);
 		

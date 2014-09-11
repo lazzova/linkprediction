@@ -3,6 +3,11 @@ package linkpred_batch;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 
+/**
+ * 
+ * Single matrix field that contains node features
+ *
+ */
 public class FeatureField {
 	/**Row index of the matrix field*/
 	int row;  
