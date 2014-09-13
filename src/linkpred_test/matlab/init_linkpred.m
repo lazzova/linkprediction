@@ -1,4 +1,4 @@
-function [obj] = init_linkpred (g, n, f, s, alpha, b, lambda, param)
+function [obj] = init_linkpred (g, n, fs, s, alpha, b, lambda, param, learningrate, interlayer, topn)
     % import all java classes needed    
     import teamwork.linkpred_matrix.*;
     import cern.colt.matrix.tdouble.DoubleMatrix1D;
@@ -16,5 +16,5 @@ function [obj] = init_linkpred (g, n, f, s, alpha, b, lambda, param)
     
     % create an object and initialize the linkprediction problem
     obj = MatlabOptFunction;
-    obj.initProblem(g, n, f, s, alpha, b, lambda, param);        
+    obj.initProblem(g, n, f, s, alpha, b, lambda, param, learningrate, interlayer, topn);        
 end

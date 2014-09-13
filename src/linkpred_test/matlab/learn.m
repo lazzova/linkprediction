@@ -4,17 +4,17 @@ function [J, w] = learn ()
     clear java;
     
     % set parameters
-    g = 50;
+    g = 2;
     n = 100;
-    f = 2;
+    fs = [2,3];
     s = 0;
-    alpha = 0.2;
+    alpha = 0;
     b = 1e-6;
     lambda = 1;
-    param = [0.5,-0.36];
+    param = [1, -1, 0.5, -2, 1];
     
     % create an object for the problem
-    o = init_linkpred(g, n, f, s, alpha, b, lambda, param);
+    o = init_linkpred(g, n, fs, s, alpha, b, lambda, param, learningrate, );
     
     % generates random numbers between -3 and 3
     w_temp = -3+rand(f, 1).*(3+3);

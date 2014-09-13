@@ -3,6 +3,8 @@ package linkpred_test;
 import java.util.ArrayList;
 
 import linkpred_batch.ArtificialGraphGenerator;
+import linkpred_batch.GradientDescent;
+import linkpred_batch.LinkPredictionTrainer;
 import linkpred_batch.Network;
 import linkpred_batch.RandomWalkGraph;
 import linkpred_batch.Ranker;
@@ -47,22 +49,25 @@ public class Main {
 		
 		long start = System.nanoTime();
 	    
+		/*
 		LinkpredProblem problem = new LinkpredProblem(graphs, f, alpha, lambda, b);
 		problem.optimize();
 		PointValuePair optimum = problem.getOptimum();
+		*/	
 				
 		// GRADIENT DESCENT OPTIMIZATION START
-		/*
+		
 		int maxIterations = 150;                                     // Maximum number of iterations  
-		int restarts = 20;
+		int restarts = 5;
 		double gradientTreshold = 1e-3;                              // Gradient convergence threshold  
-		double costThreshold = 4;                                    // Minimal cost
+		double costThreshold = 15;                                   // Minimal cost
 		double [] initialParameters = new double [f];
 		for (int i = 0; i < f; i++)
 			initialParameters[i] = Math.random();
 		
+		double learningRate = 0.0001;
 		GradientDescent gd = new GradientDescent(
-				new LinkPredictionTrainer(graphs, f, alpha, lambda, b), 
+				new LinkPredictionTrainer(graphs, f, alpha, lambda, b, learningRate ), 
 				maxIterations, 
 				gradientTreshold, 
 				costThreshold);
@@ -73,7 +78,7 @@ public class Main {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		*/
+		
 		// GRADIENT DESCENT OPTIMIZATION END
 		
 		long end = System.nanoTime();
