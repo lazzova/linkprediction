@@ -136,8 +136,7 @@ public class ArtificialGraphGenerator {
 					graph.s != idRankPairs.get(i).getFirst()) 
 				graph.L.add(idRankPairs.get(i).getKey());	
 			i++;
-		}	
-		
+		}			
 	}
 	
 }

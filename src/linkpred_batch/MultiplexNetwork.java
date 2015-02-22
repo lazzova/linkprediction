@@ -80,7 +80,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 			for (int j = 0; j < graphsNumber; j++) {
 				if (i == j) continue;
 				for (int k = 0; k < layerDim; k++) 	
-					Qt.set(k + j*layerDim, i*layerDim + k, interlayer);				
+					Qt.set(k + j*layerDim, i*layerDim + k, interlayer/(graphsNumber-1));				
 			}
 		}
 	}
@@ -147,16 +147,7 @@ public class MultiplexNetwork extends RandomWalkGraph {
 		}
 		
 		//printMatrix(Q);
-		/*
-		// add interlayer jumps 
-		for (int i = 0; i < graphsNumber; i++) {
-			for (int j = 0; j < graphsNumber; j++) {
-				if (i == j) continue;
-				for (int k = 0; k < layerDim; k++) 	
-					Q.set(k + j*layerDim, i*layerDim + k, interlayer);				
-			}
-		}
-		*/
+		//isColumnStochastic(Q);
 		
 		return Q;		
 	}
