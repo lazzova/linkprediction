@@ -1,5 +1,13 @@
 package linkpred_test;
 
+import graph_generators.DorogovtsevMendesGraphGenerator;
+import graph_generators.GraphGenerator;
+import graph_generators.PreferentialAttachmentGraphGenerator;
+import graph_generators.RandomEuclideanGraphGenerator;
+import graph_generators.RandomGraphGenerator;
+import graph_generators.ScaleFreeGraphGenerator;
+import graph_generators.SmallWorldGraphGenerator;
+
 import java.util.ArrayList;
 
 import linkpred_batch.ArtificialGraphGenerator;
@@ -39,17 +47,24 @@ public class MultiplexMain {
 				DenseDoubleMatrix1D(param);	
 						
 		int topN = 10; 
+		double learningRate = 0.003;
 			
 		Network [] graphs = new Network [3];                    // build the graph
+		/*
 		ArtificialGraphGenerator.initialize(f1);
 		graphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s);
 		ArtificialGraphGenerator.initialize(f2);
 		graphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s);
 		ArtificialGraphGenerator.initialize(f3);
 		graphs[2] = (Network) ArtificialGraphGenerator.generate(n, f3, s); 
+		*/
+		GraphGenerator gg = new ScaleFreeGraphGenerator();
+		graphs[0] = (Network) gg.generate(n, f1, s);
+		graphs[1] = (Network) gg.generate(n, f2, s);
+		graphs[2] = (Network) gg.generate(n, f3, s);
 		
 		MultiplexNetwork multiplex = new MultiplexNetwork(graphs, interlayer);
-		ArtificialGraphGenerator.buildDandL(multiplex, topN, parameters, alpha);
+		gg.buildDandL(multiplex, topN, parameters, alpha);
 		
 		// TODO: debugging
 		//multiplex.buildAdjacencyMatrix(new DenseDoubleMatrix1D(param));
@@ -73,7 +88,7 @@ public class MultiplexMain {
 		
 		
 		GradientDescent gd = new GradientDescent(new LinkPredictionTrainer(
-				new RandomWalkGraph [] {multiplex}, f, alpha, lambda, b, 0.0003), // TODO 
+				new RandomWalkGraph [] {multiplex}, f, alpha, lambda, b, learningRate), 
 				maxIterations, 
 				gradientTreshold, 
 				costThreshold);
@@ -108,12 +123,17 @@ public class MultiplexMain {
 		ArrayList<Integer> predictedLinks = new ArrayList<Integer>();
 		
 		Network [] testGraphs = new Network [3];                    // build the graph
+		/*
 		ArtificialGraphGenerator.initialize(f1);
 		testGraphs[0] = (Network) ArtificialGraphGenerator.generate(n, f1, s);
 		ArtificialGraphGenerator.initialize(f2);
 		testGraphs[1] = (Network) ArtificialGraphGenerator.generate(n, f2, s);
 		ArtificialGraphGenerator.initialize(f3);
 		testGraphs[2] = (Network) ArtificialGraphGenerator.generate(n, f3, s);
+		*/
+		testGraphs[0] = (Network) gg.generate(n, f1, s);
+		testGraphs[1] = (Network) gg.generate(n, f2, s);
+		testGraphs[2] = (Network) gg.generate(n, f3, s);
 		
 		MultiplexNetwork testMultiplex = new MultiplexNetwork(graphs, interlayer);
 		

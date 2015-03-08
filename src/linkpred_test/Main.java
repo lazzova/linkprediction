@@ -1,5 +1,13 @@
 package linkpred_test;
 
+import graph_generators.DorogovtsevMendesGraphGenerator;
+import graph_generators.GraphGenerator;
+import graph_generators.PreferentialAttachmentGraphGenerator;
+import graph_generators.RandomEuclideanGraphGenerator;
+import graph_generators.RandomGraphGenerator;
+import graph_generators.ScaleFreeGraphGenerator;
+import graph_generators.SmallWorldGraphGenerator;
+
 import java.util.ArrayList;
 
 import linkpred_batch.ArtificialGraphGenerator;
@@ -38,12 +46,21 @@ public class Main {
 		DoubleMatrix1D parameters = new DenseDoubleMatrix1D(param);	
 		int topN = 10;
 		
+		/*
 		ArtificialGraphGenerator.initialize(f);                       // build the artificial graph
 		RandomWalkGraph [] graphs = new Network [g];
 		for (int i = 0; i < g; i++) {
 			graphs[i] = ArtificialGraphGenerator.generate(n, f, s);
 			ArtificialGraphGenerator.buildDandL(graphs[i], topN, parameters, alpha);  
 		}
+		*/
+		GraphGenerator gg = new SmallWorldGraphGenerator(10, 0.3);
+		RandomWalkGraph [] graphs = new Network [g];
+		for (int i = 0; i < g; i++) {
+			graphs[i] = gg.generate(n, f, s);
+			gg.buildDandL(graphs[i], topN, parameters, alpha);  
+		}
+		
 		
 		System.out.println("Graph generation end");				 
 		
@@ -96,7 +113,8 @@ public class Main {
 		ArrayList<Integer> trueLinks = new ArrayList<Integer>();
 		ArrayList<Integer> predictedLinks = new ArrayList<Integer>();
 		double [] trueParameters = param;
-		RandomWalkGraph testGraph = ArtificialGraphGenerator.generate(n, f, s);
+		//RandomWalkGraph testGraph = ArtificialGraphGenerator.generate(n, f, s);
+		RandomWalkGraph testGraph = gg.generate(n, f, s);
 		trueLinks = Ranker.predictLinks(
 					testGraph, new DenseDoubleMatrix1D(trueParameters), alpha, topN);
 		predictedLinks = Ranker.predictLinks(testGraph, new DenseDoubleMatrix1D(optimum.getFirst()), alpha, topN);
@@ -108,7 +126,7 @@ public class Main {
 		
 		System.out.println("\nPredicted links:");
 		for (int i = 0; i < predictedLinks.size(); i++)
-			System.out.print(predictedLinks.get(i) + "(" + predictedLinks.get(i) % n + ") ");
+			System.out.print(predictedLinks.get(i) + " ");
 		System.out.println();
 		
 	}
